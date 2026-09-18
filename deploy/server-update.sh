@@ -17,15 +17,15 @@ fi
 
 cd "${SOURCE_DIR}"
 git fetch --prune origin "${BRANCH}"
-git checkout "${BRANCH}"
-git pull --ff-only origin "${BRANCH}"
+git checkout -B "${BRANCH}" "origin/${BRANCH}"
+git reset --hard "origin/${BRANCH}"
 
 readonly REVISION="$(git rev-parse --short=12 HEAD)"
 readonly VERSIONED_IMAGE="${IMAGE_REPOSITORY}:${REVISION}"
 readonly PREVIOUS_IMAGE_ID="$(docker image inspect "${IMAGE_REPOSITORY}:latest" --format '{{.Id}}' 2>/dev/null || true)"
 
 echo "Building ${VERSIONED_IMAGE}"
-docker build --pull -f deploy/Dockerfile.server -t "${VERSIONED_IMAGE}" .
+docker build -f deploy/Dockerfile.server -t "${VERSIONED_IMAGE}" .
 docker tag "${VERSIONED_IMAGE}" "${IMAGE_REPOSITORY}:latest"
 
 mkdir -p "${APP_DIR}/backups"
