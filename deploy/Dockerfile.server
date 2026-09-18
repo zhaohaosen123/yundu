@@ -2,7 +2,8 @@ FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/oven/bun:1.4.0 AS web-bu
 
 WORKDIR /build/web
 COPY web/package.json web/bun.lock ./
-RUN bun install --frozen-lockfile
+RUN bun config set registry https://registry.npmmirror.com \
+    && bun install --frozen-lockfile
 COPY web ./
 COPY VERSION /build/VERSION
 RUN DISABLE_ESLINT_PLUGIN=true VITE_REACT_APP_VERSION=$(cat /build/VERSION) bun run build
@@ -14,7 +15,7 @@ WORKDIR /build
 
 COPY go.mod go.sum ./
 COPY relaykit/go.mod relaykit/go.mod
-RUN go mod download
+RUN GOPROXY=https://goproxy.cn,direct go mod download
 
 COPY . .
 COPY --from=web-builder /build/web/dist web/dist
