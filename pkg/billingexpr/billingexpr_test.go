@@ -481,6 +481,22 @@ func TestComputeTieredQuota_Basic(t *testing.T) {
 	}
 }
 
+func TestComputeTieredQuota_CNYPriceUsesNoExchangeConversion(t *testing.T) {
+	const expression = `tier("peak", p * 9 + c * 27)`
+	snapshot := &billingexpr.BillingSnapshot{
+		BillingMode:  "tiered_expr",
+		ExprString:   expression,
+		ExprHash:     billingexpr.ExprHashString(expression),
+		GroupRatio:   1,
+		QuotaPerUnit: 500_000,
+	}
+
+	result, err := billingexpr.ComputeTieredQuota(snapshot, billingexpr.TokenParams{P: 18_361, C: 52})
+	require.NoError(t, err)
+	assert.Equal(t, 83_327, result.ActualQuotaAfterGroup)
+	assert.InDelta(t, 0.166654, float64(result.ActualQuotaAfterGroup)/snapshot.QuotaPerUnit, 0.000001)
+}
+
 func TestComputeTieredQuota_SameTier(t *testing.T) {
 	snap := &billingexpr.BillingSnapshot{
 		BillingMode:               "tiered_expr",
