@@ -1,0 +1,9 @@
+# Local deployment artifacts are intentionally never committed.
+*.dump
+*.tar
+*.tar.gz
+new-api-rmb
+new-api-rmb-*
+current-production.dump
+local-before-rmb-migration.dump
+local-new-api.dump
