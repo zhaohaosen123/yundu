@@ -1,0 +1,26 @@
+# Local development profile: SQLite + single gateway container.
+# Copy .env.local.example to .env.local and replace the secret before starting.
+services:
+  new-api:
+    image: calciumion/new-api:latest
+    container_name: new-api-local
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+      - ./logs:/app/logs
+    environment:
+      TZ: Asia/Shanghai
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env.local}
+      SESSION_COOKIE_SECURE: "false"
+      TRUSTED_PROXIES: none
+      ERROR_LOG_ENABLED: "true"
+      NODE_NAME: local-dev
+    command: ["--log-dir", "/app/logs"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/api/status | grep -q '\"success\":true'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+

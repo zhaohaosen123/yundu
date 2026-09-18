@@ -1,0 +1,91 @@
+# Frontend Development - Backend runs from the mounted local source
+#
+# Usage:
+#   1. docker compose -f docker-compose.dev.yml up -d
+#   2. make dev-web
+#   3. Open http://localhost:5174 (Rsbuild dev server, API auto-proxied to :3000)
+#
+# Apply Go code changes without rebuilding an image:
+#   docker compose -f docker-compose.dev.yml restart new-api
+#
+# Stop:
+#   docker compose -f docker-compose.dev.yml down
+#
+# Reset data:
+#   docker compose -f docker-compose.dev.yml down -v
+
+services:
+  new-api:
+    image: golang:1.26.1-alpine
+    container_name: new-api-dev
+    restart: unless-stopped
+    working_dir: /app
+    command:
+      - sh
+      - -ec
+      - |
+        mkdir -p web/dist
+        if [ ! -f web/dist/index.html ]; then
+          printf '%s\n' '<!doctype html><html><body>Use the frontend development server.</body></html>' > web/dist/index.html
+        fi
+        go run . --log-dir /app/logs
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - dev_data:/data
+      - ./logs:/app/logs
+      - dev_go_module_cache:/go/pkg/mod
+      - dev_go_build_cache:/root/.cache/go-build
+    environment:
+      - SQL_DSN=postgresql://root:123456@postgres:5432/new-api
+      - REDIS_CONN_STRING=redis://redis
+      - TZ=Asia/Shanghai
+      - BATCH_UPDATE_ENABLED=true
+      # Local HTTP dev mode: keep Secure=false and leave TRUSTED_URL unset. This disables the refresh/logout OriginGuard so the :5174 -> :3000 dev proxy works.
+      - SESSION_COOKIE_SECURE=false
+      # For HTTPS only: set Secure=true and list every exact trusted HTTPS browser Origin. This does not configure relay CORS.
+      # - SESSION_COOKIE_SECURE=true
+      # - SESSION_COOKIE_TRUSTED_URL=https://example.com,https://admin.example.com
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks:
+      - dev-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: new-api-dev-redis
+    restart: unless-stopped
+    networks:
+      - dev-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: new-api-dev-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: new-api
+    volumes:
+      - dev_pg_data:/var/lib/postgresql/data
+    networks:
+      - dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d new-api"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  dev_data:
+  dev_pg_data:
+  dev_go_module_cache:
+  dev_go_build_cache:
+
+networks:
+  dev-network:
+    driver: bridge
