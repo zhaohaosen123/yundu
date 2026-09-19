@@ -93,6 +93,7 @@ export function SignUpForm({
     defaultValues: {
       username: '',
       email: '',
+      affiliateCode: getAffiliateCode(),
       password: '',
       confirmPassword: '',
     },
@@ -166,7 +167,7 @@ export function SignUpForm({
         password: data.password,
         email: data.email || undefined,
         verification_code: verificationCode || undefined,
-        aff_code: getAffiliateCode(),
+        aff_code: data.affiliateCode?.trim() || undefined,
         turnstile: turnstileToken,
       })
 
@@ -293,6 +294,21 @@ export function SignUpForm({
               <FormLabel>{t('Confirm password')}</FormLabel>
               <FormControl>
                 <PasswordInput placeholder={t('Confirm password')} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Optional referral code */}
+        <FormField
+          control={form.control}
+          name='affiliateCode'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('Referral code (optional)')}</FormLabel>
+              <FormControl>
+                <Input placeholder={t('Enter a referral code')} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

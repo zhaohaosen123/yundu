@@ -13,9 +13,9 @@ import (
 )
 
 type TopUp struct {
-	Id              int     `json:"id"`
-	UserId          int     `json:"user_id" gorm:"index"`
-	Amount          int64   `json:"amount"`
+	Id     int   `json:"id"`
+	UserId int   `json:"user_id" gorm:"index"`
+	Amount int64 `json:"amount"`
 	// AmountDecimal preserves fractional user-facing top-up amounts. Amount is
 	// retained for compatibility with existing orders and API consumers.
 	AmountDecimal   string  `json:"amount_decimal,omitempty" gorm:"type:varchar(64)"`
@@ -115,7 +115,7 @@ func creditTopUpQuota(tx *gorm.DB, userId int, creditedQuota int, updates map[st
 		return result.Error
 	}
 	if result.RowsAffected == 1 {
-		return nil
+		return creditReferralBonus(tx, userId, creditedQuota)
 	}
 
 	var count int64
@@ -126,6 +126,52 @@ func creditTopUpQuota(tx *gorm.DB, userId int, creditedQuota int, updates map[st
 		return gorm.ErrRecordNotFound
 	}
 	return ErrTopUpQuotaLimitExceeded
+}
+
+const referralTopUpBonusPercent = 5
+
+func syncReferralBonusCache(userId int, creditedQuota int, source string) {
+	bonus := creditedQuota / (100 / referralTopUpBonusPercent)
+	if bonus <= 0 {
+		return
+	}
+	var user User
+	if err := DB.Select("inviter_id").First(&user, userId).Error; err == nil && user.InviterId > 0 && user.InviterId != userId {
+		syncCreditUserQuotaCache(user.InviterId, bonus, source+" referral bonus")
+	}
+}
+
+// creditReferralBonus credits 5% of a successful top-up to the account that
+// supplied the invite code. It runs in the same transaction as the purchaser
+// credit, so a retried payment callback cannot create a second reward.
+func creditReferralBonus(tx *gorm.DB, userId int, creditedQuota int) error {
+	bonus := creditedQuota / (100 / referralTopUpBonusPercent)
+	if bonus <= 0 {
+		return nil
+	}
+
+	var invitee struct {
+		InviterId int
+	}
+	if err := tx.Model(&User{}).Select("inviter_id").Where("id = ?", userId).Take(&invitee).Error; err != nil {
+		return err
+	}
+	if invitee.InviterId <= 0 || invitee.InviterId == userId {
+		return nil
+	}
+
+	result := tx.Model(&User{}).
+		Where("id = ? AND quota <= ?", invitee.InviterId, common.MaxWalletQuota-bonus).
+		Update("quota", gorm.Expr("quota + ?", bonus))
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		common.SysLog(fmt.Sprintf("referral bonus skipped: inviter_id=%d invitee_id=%d bonus=%d (account missing or quota limit)", invitee.InviterId, userId, bonus))
+		return nil
+	}
+	common.SysLog(fmt.Sprintf("referral bonus credited: inviter_id=%d invitee_id=%d bonus=%d", invitee.InviterId, userId, bonus))
+	return nil
 }
 
 func (topUp *TopUp) Update() error {
@@ -238,6 +284,7 @@ func RechargeEpay(tradeNo string, actualPaymentMethod string, callerIp string) (
 		return true, nil
 	}
 	syncCreditUserQuotaCache(topUp.UserId, quotaToAdd, "epay topup")
+	syncReferralBonusCache(topUp.UserId, quotaToAdd, "epay topup")
 
 	common.SysLog(fmt.Sprintf("易支付充值成功 trade_no=%s user_id=%d quota_to_add=%d money=%.2f", topUp.TradeNo, topUp.UserId, quotaToAdd, topUp.Money))
 	RecordTopupLog(topUp.UserId, fmt.Sprintf("使用在线充值成功，充值金额: %v，支付金额：%f", logger.LogQuota(quotaToAdd), topUp.Money), callerIp, topUp.PaymentMethod, PaymentProviderEpay)
@@ -294,6 +341,7 @@ func Recharge(referenceId string, customerId string, callerIp string) (err error
 		return errors.New("充值失败，请稍后重试")
 	}
 	syncCreditUserQuotaCache(topUp.UserId, quota, "stripe topup")
+	syncReferralBonusCache(topUp.UserId, quota, "stripe topup")
 
 	RecordTopupLog(topUp.UserId, fmt.Sprintf("使用在线充值成功，充值金额: %v，支付金额：%d", logger.FormatQuota(quota), topUp.Amount), callerIp, topUp.PaymentMethod, PaymentMethodStripe)
 
@@ -530,6 +578,7 @@ func ManualCompleteTopUp(tradeNo string, callerIp string) error {
 
 	// 事务外记录日志，避免阻塞
 	syncCreditUserQuotaCache(userId, quotaToAdd, "manual topup")
+	syncReferralBonusCache(userId, quotaToAdd, "manual topup")
 	RecordTopupLog(userId, fmt.Sprintf("管理员补单成功，充值金额: %v，支付金额：%f", logger.FormatQuota(quotaToAdd), payMoney), callerIp, paymentMethod, "admin")
 	return nil
 }
@@ -599,6 +648,7 @@ func RechargeCreem(referenceId string, customerEmail string, customerName string
 		return errors.New("充值失败，请稍后重试")
 	}
 	syncCreditUserQuotaCache(topUp.UserId, quota, "creem topup")
+	syncReferralBonusCache(topUp.UserId, quota, "creem topup")
 
 	RecordTopupLog(topUp.UserId, fmt.Sprintf("使用Creem充值成功，充值额度: %v，支付金额：%.2f", quota, topUp.Money), callerIp, topUp.PaymentMethod, PaymentMethodCreem)
 
@@ -657,6 +707,7 @@ func RechargeWaffo(tradeNo string, callerIp string) (err error) {
 		return errors.New("充值失败，请稍后重试")
 	}
 	syncCreditUserQuotaCache(topUp.UserId, quotaToAdd, "waffo topup")
+	syncReferralBonusCache(topUp.UserId, quotaToAdd, "waffo topup")
 
 	if quotaToAdd > 0 {
 		RecordTopupLog(topUp.UserId, fmt.Sprintf("Waffo充值成功，充值额度: %v，支付金额: %.2f", logger.FormatQuota(quotaToAdd), topUp.Money), callerIp, topUp.PaymentMethod, PaymentMethodWaffo)
@@ -717,6 +768,7 @@ func RechargeWaffoPancake(tradeNo string) (err error) {
 		return errors.New("充值失败，请稍后重试")
 	}
 	syncCreditUserQuotaCache(topUp.UserId, quotaToAdd, "waffo pancake topup")
+	syncReferralBonusCache(topUp.UserId, quotaToAdd, "waffo pancake topup")
 
 	if quotaToAdd > 0 {
 		RecordLog(topUp.UserId, LogTypeTopup, fmt.Sprintf("Waffo Pancake充值成功，充值额度: %v，支付金额: %.2f", logger.FormatQuota(quotaToAdd), topUp.Money))
