@@ -23,7 +23,14 @@ import {
   createRouter,
   RouterProvider,
 } from '@tanstack/react-router'
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -36,6 +43,7 @@ import { OverviewDashboard } from '../overview-dashboard'
 const storageKey = 'dashboard_overview_setup_guide_expanded'
 let client: QueryClient
 let keyLookupError: Error | null
+let clipboardWrite: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   window.localStorage.clear()
@@ -52,6 +60,11 @@ beforeEach(() => {
     defaultOptions: { queries: { retry: false } },
   })
   keyLookupError = null
+  clipboardWrite = vi.fn().mockResolvedValue(undefined)
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText: clipboardWrite },
+  })
   vi.spyOn(api, 'get').mockImplementation(async (url) => {
     switch (url) {
       case '/api/token/?p=1&size=10':
@@ -110,6 +123,17 @@ describe('overview setup guide', () => {
   it('shows usage first and only a header entry when setup is complete', async () => {
     await renderOverview()
 
+    expect(screen.getByText('API URL')).toBeVisible()
+    expect(screen.getByText(`${window.location.origin}/v1/`)).toBeVisible()
+    const copyButton = screen.getByRole('button', { name: 'Copy URL' })
+    expect(copyButton).toBeVisible()
+    fireEvent.click(copyButton)
+    await waitFor(() =>
+      expect(clipboardWrite).toHaveBeenCalledWith(
+        `${window.location.origin}/v1/`
+      )
+    )
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeVisible()
     const toggle = await screen.findByRole('button', { name: 'Setup guide' })
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
     expect(
