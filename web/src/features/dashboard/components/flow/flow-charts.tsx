@@ -61,6 +61,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { getFlowQuotaDates } from '@/features/dashboard/api'
+import { DASHBOARD_REFRESH_INTERVAL_MS } from '@/features/dashboard/constants'
 import {
   buildDashboardFlowData,
   buildFlowSankeySpec,
@@ -342,6 +343,7 @@ export function FlowCharts(props: FlowChartsProps) {
     select: (res) =>
       requireSuccessfulFlowRows(res, t('Please try again later.')),
     staleTime: 60_000,
+    refetchInterval: DASHBOARD_REFRESH_INTERVAL_MS,
   })
 
   const maskSensitive = props.sensitiveVisible === false

@@ -53,14 +53,23 @@ func IsCNYDisplay() bool {
 
 // GetQuotaDisplayType 返回额度展示类型
 func GetQuotaDisplayType() string {
-	return QuotaDisplayTypeCNY
+	switch generalSetting.QuotaDisplayType {
+	case QuotaDisplayTypeUSD, QuotaDisplayTypeCNY, QuotaDisplayTypeTokens, QuotaDisplayTypeCustom:
+		return generalSetting.QuotaDisplayType
+	default:
+		return QuotaDisplayTypeCNY
+	}
 }
 
 // GetCurrencySymbol 返回当前展示类型对应符号
 func GetCurrencySymbol() string {
 	switch GetQuotaDisplayType() {
+	case QuotaDisplayTypeUSD:
+		return "$"
 	case QuotaDisplayTypeCNY:
 		return "¥"
+	case QuotaDisplayTypeCustom:
+		return generalSetting.CustomCurrencySymbol
 	default:
 		return ""
 	}
@@ -71,6 +80,8 @@ func GetUsdToCurrencyRate(usdToCny float64) float64 {
 	switch GetQuotaDisplayType() {
 	case QuotaDisplayTypeCNY:
 		return usdToCny
+	case QuotaDisplayTypeCustom:
+		return generalSetting.CustomCurrencyExchangeRate
 	default:
 		return 1
 	}

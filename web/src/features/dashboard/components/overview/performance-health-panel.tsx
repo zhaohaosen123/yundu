@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next'
 
 import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { DASHBOARD_REFRESH_INTERVAL_MS } from '@/features/dashboard/constants'
 import { getPerfMetricsSummary } from '@/features/performance-metrics/api'
 import {
   formatLatency,
@@ -65,6 +66,7 @@ export function PerformanceHealthPanel() {
         await getPerfMetricsSummary(PERFORMANCE_WINDOW_HOURS)
       ),
     staleTime: 60 * 1000,
+    refetchInterval: DASHBOARD_REFRESH_INTERVAL_MS,
     retry: false,
   })
 

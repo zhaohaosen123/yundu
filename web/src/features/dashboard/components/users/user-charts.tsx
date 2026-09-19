@@ -28,6 +28,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useTheme } from '@/context/theme-provider'
 import { getUserQuotaDataByUsers } from '@/features/dashboard/api'
 import {
+  DASHBOARD_REFRESH_INTERVAL_MS,
   TIME_GRANULARITY_OPTIONS,
   TIME_RANGE_PRESETS,
 } from '@/features/dashboard/constants'
@@ -143,6 +144,7 @@ export function UserCharts(props: UserChartsProps) {
       requireServerSuccess(await getUserQuotaDataByUsers(timeRange)),
     select: (res) => (res.success ? res.data : []),
     staleTime: 60_000,
+    refetchInterval: DASHBOARD_REFRESH_INTERVAL_MS,
   })
 
   const chartData = useMemo(

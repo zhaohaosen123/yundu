@@ -156,8 +156,7 @@ export function parseCurrencyDisplayType(
   value: unknown,
   fallback: CurrencyDisplayType = 'CNY'
 ): CurrencyDisplayType {
-  void value
-  return fallback
+  return isCurrencyDisplayType(value) ? value : fallback
 }
 
 function getConfig(): CurrencyConfig {
@@ -166,9 +165,7 @@ function getConfig(): CurrencyConfig {
   return {
     ...DEFAULT_CURRENCY_CONFIG,
     ...currency,
-    displayInCurrency: true,
-    // The site uses RMB for every monetary display.
-    quotaDisplayType: 'CNY',
+    quotaDisplayType: parseCurrencyDisplayType(currency?.quotaDisplayType),
     quotaPerUnit:
       currency?.quotaPerUnit && currency.quotaPerUnit > 0
         ? currency.quotaPerUnit
@@ -189,17 +186,41 @@ function getConfig(): CurrencyConfig {
 }
 
 function getDisplayMeta(config: CurrencyConfig): DisplayMeta {
-  void config
-  return {
-    kind: 'currency',
-    symbol: '¥',
-    currencyCode: 'CNY',
-    exchangeRate: 1,
+  switch (config.quotaDisplayType) {
+    case 'USD':
+      return {
+        kind: 'currency',
+        symbol: '$',
+        currencyCode: 'USD',
+        exchangeRate: 1,
+      }
+    case 'CNY':
+      return {
+        kind: 'currency',
+        symbol: '¥',
+        currencyCode: 'CNY',
+        exchangeRate: config.usdExchangeRate,
+      }
+    case 'CUSTOM':
+      return {
+        kind: 'custom',
+        symbol: config.customCurrencySymbol,
+        exchangeRate: config.customCurrencyExchangeRate,
+      }
+    case 'TOKENS':
+      return { kind: 'tokens', quotaPerUnit: config.quotaPerUnit }
   }
 }
 
 function getBillingDisplayMeta(config: CurrencyConfig): DisplayMeta {
-  return getDisplayMeta(config)
+  const meta = getDisplayMeta(config)
+  if (meta.kind !== 'tokens') return meta
+  return {
+    kind: 'currency',
+    symbol: '$',
+    currencyCode: 'USD',
+    exchangeRate: 1,
+  }
 }
 
 function mergeOptions(
@@ -518,14 +539,13 @@ export function formatQuotaWithCurrency(
  * - Form field labels
  */
 export function getCurrencyLabel(): string {
-  const { config, meta } = getCurrencyDisplay()
+  const { meta } = getCurrencyDisplay()
 
   if (meta.kind === 'tokens') {
     return 'Tokens'
   }
 
-  void config
-  return meta.kind === 'custom' ? meta.symbol : 'CNY'
+  return meta.kind === 'custom' ? meta.symbol : meta.currencyCode
 }
 
 /**

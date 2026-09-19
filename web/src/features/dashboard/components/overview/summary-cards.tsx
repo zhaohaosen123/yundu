@@ -25,6 +25,7 @@ import { useTranslation } from 'react-i18next'
 import { StaggerContainer, StaggerItem } from '@/components/page-transition'
 import { Button } from '@/components/ui/button'
 import { getUserQuotaDates } from '@/features/dashboard/api'
+import { DASHBOARD_REFRESH_INTERVAL_MS } from '@/features/dashboard/constants'
 import { useSummaryCardsConfig } from '@/features/dashboard/hooks/use-dashboard-config'
 import type { QuotaDataItem } from '@/features/dashboard/types'
 import { useStatus } from '@/hooks/use-status'
@@ -164,6 +165,7 @@ export function SummaryCards() {
         })
       ),
     staleTime: 60 * 1000,
+    refetchInterval: DASHBOARD_REFRESH_INTERVAL_MS,
   })
 
   const summaryValues = useMemo(() => {
