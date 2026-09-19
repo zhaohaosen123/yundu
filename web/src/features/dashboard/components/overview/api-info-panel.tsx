@@ -20,6 +20,7 @@ import { Route } from 'lucide-react'
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { CopyButton } from '@/components/copy-button'
 import { IconBadge } from '@/components/ui/icon-badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useApiInfo } from '@/features/dashboard/hooks/use-status-data'
@@ -36,6 +37,8 @@ export function ApiInfoPanel() {
   const { t } = useTranslation()
   const { items: list, loading } = useApiInfo()
   const [pingStatus, setPingStatus] = useState<PingStatusMap>({})
+  const currentApiBaseUrl =
+    typeof window === 'undefined' ? '' : `${window.location.origin}/v1/`
 
   const handleTest = useCallback(async (url: string) => {
     setPingStatus((prev) => ({
@@ -59,13 +62,30 @@ export function ApiInfoPanel() {
       }
       description={t('Configured routes and latency checks')}
       loading={loading}
-      empty={!list.length}
+      empty={!list.length && !currentApiBaseUrl}
       emptyMessage={t('No API routes configured')}
       height='h-72'
       contentClassName='p-0'
     >
       <ScrollArea className='h-72'>
         <div>
+          {currentApiBaseUrl && (
+            <div className='border-border/60 flex items-center justify-between gap-3 border-b px-3 py-3 sm:px-5'>
+              <div className='min-w-0'>
+                <div className='text-sm font-medium'>{t('API URL')}</div>
+                <div className='text-muted-foreground truncate font-mono text-xs'>
+                  {currentApiBaseUrl}
+                </div>
+              </div>
+              <CopyButton
+                value={currentApiBaseUrl}
+                variant='ghost'
+                size='sm'
+                tooltip={t('Copy URL')}
+                aria-label={t('Copy URL')}
+              />
+            </div>
+          )}
           {list.map((item: ApiInfoItem, idx: number) => (
             <div
               key={item.url}
