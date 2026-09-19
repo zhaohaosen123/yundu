@@ -1,0 +1,18 @@
+FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/oven/bun:1.4.0-alpine AS bun-toolchain
+
+FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/library/golang:1.26.1-alpine
+
+COPY --from=bun-toolchain /usr/local/bin/bun /usr/local/bin/bun
+
+ENV CGO_ENABLED=0 \
+    GO111MODULE=on \
+    GOWORK=off \
+    GOEXPERIMENT=greenteagc \
+    GOPROXY=https://goproxy.cn,direct
+
+RUN apk add --no-cache ca-certificates git libstdc++ tzdata \
+    && mkdir -p /go/pkg/mod /root/.cache/go-build /root/.bun/install/cache
+
+WORKDIR /app
+
+CMD ["sh", "/app/deploy/source-entrypoint.sh"]

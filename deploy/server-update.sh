@@ -4,10 +4,11 @@ set -Eeuo pipefail
 readonly SOURCE_DIR="${SOURCE_DIR:-/opt/yundu}"
 readonly APP_DIR="${APP_DIR:-/opt/new-api}"
 readonly BRANCH="${DEPLOY_BRANCH:-main}"
-readonly IMAGE_REPOSITORY="new-api-rmb"
+readonly RUNTIME_IMAGE="new-api-source-runtime:go1.26.1-bun1.4.0"
 readonly CONTAINER_NAME="new-api"
 readonly HEALTH_URL="http://127.0.0.1/api/status"
 readonly LOCK_FILE="/var/lock/yundu-deploy.lock"
+readonly COMPOSE_FILE="${SOURCE_DIR}/deploy/docker-compose.source.yml"
 
 exec 9>"${LOCK_FILE}"
 if ! flock -n 9; then
@@ -16,17 +17,18 @@ if ! flock -n 9; then
 fi
 
 cd "${SOURCE_DIR}"
+readonly PREVIOUS_REVISION="$(git rev-parse HEAD)"
 git fetch --prune origin "${BRANCH}"
 git checkout -B "${BRANCH}" "origin/${BRANCH}"
 git reset --hard "origin/${BRANCH}"
 
 readonly REVISION="$(git rev-parse --short=12 HEAD)"
-readonly VERSIONED_IMAGE="${IMAGE_REPOSITORY}:${REVISION}"
-readonly PREVIOUS_IMAGE_ID="$(docker image inspect "${IMAGE_REPOSITORY}:latest" --format '{{.Id}}' 2>/dev/null || true)"
 
-echo "Building ${VERSIONED_IMAGE}"
-docker build -f deploy/Dockerfile.server -t "${VERSIONED_IMAGE}" .
-docker tag "${VERSIONED_IMAGE}" "${IMAGE_REPOSITORY}:latest"
+if ! docker image inspect "${RUNTIME_IMAGE}" >/dev/null 2>&1; then
+  echo "The source runtime image is missing; build it once with:"
+  echo "docker build -f deploy/Dockerfile.source-runtime -t ${RUNTIME_IMAGE} ."
+  exit 1
+fi
 
 mkdir -p "${APP_DIR}/backups"
 if docker ps --format '{{.Names}}' | grep -Fxq new-api-postgres; then
@@ -34,11 +36,17 @@ if docker ps --format '{{.Names}}' | grep -Fxq new-api-postgres; then
     >"${APP_DIR}/backups/pre-deploy-${REVISION}-$(date +%Y%m%d%H%M%S).dump"
 fi
 
-cd "${APP_DIR}"
-docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
-docker-compose --env-file .env.deploy -f docker-compose.deploy.yml up -d new-api
+restart_from_source() {
+  SOURCE_DIR="${SOURCE_DIR}" APP_DIR="${APP_DIR}" docker-compose \
+    --project-name new-api \
+    --env-file "${APP_DIR}/.env.deploy" \
+    -f "${COMPOSE_FILE}" \
+    up -d --no-build --force-recreate new-api
+}
 
-for attempt in $(seq 1 60); do
+restart_from_source
+
+for attempt in $(seq 1 300); do
   if curl --fail --silent --show-error "${HEALTH_URL}" >/dev/null; then
     echo "Deployment ${REVISION} is healthy."
     exit 0
@@ -47,9 +55,7 @@ for attempt in $(seq 1 60); do
 done
 
 echo "Deployment ${REVISION} failed its health check; rolling back." >&2
-if [[ -n "${PREVIOUS_IMAGE_ID}" ]]; then
-  docker tag "${PREVIOUS_IMAGE_ID}" "${IMAGE_REPOSITORY}:latest"
-  docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
-  docker-compose --env-file .env.deploy -f docker-compose.deploy.yml up -d new-api
-fi
+cd "${SOURCE_DIR}"
+git reset --hard "${PREVIOUS_REVISION}"
+restart_from_source
 exit 1

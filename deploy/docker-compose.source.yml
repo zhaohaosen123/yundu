@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  new-api:
+    image: new-api-source-runtime:go1.26.1-bun1.4.0
+    container_name: new-api
+    restart: unless-stopped
+    env_file:
+      - ${APP_DIR:-/opt/new-api}/config/runtime.env
+    command: ["sh", "/app/deploy/source-entrypoint.sh"]
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ${SOURCE_DIR:-/opt/yundu}:/app
+      - ${APP_DIR:-/opt/new-api}/data:/data
+      - ${APP_DIR:-/opt/new-api}/logs:/app/logs
+      - go_module_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+      - bun_install_cache:/root/.bun/install/cache
+      - web_node_modules:/app/web/node_modules
+    environment:
+      SQL_DSN: postgresql://root:${POSTGRES_PASSWORD}@postgres:5432/new-api
+      REDIS_CONN_STRING: redis://:${REDIS_PASSWORD}@redis:6379
+      SESSION_SECRET: ${SESSION_SECRET}
+      SESSION_COOKIE_SECURE: "false"
+      TRUSTED_PROXIES: none
+      TZ: Asia/Shanghai
+      ERROR_LOG_ENABLED: "true"
+      BATCH_UPDATE_ENABLED: "true"
+      NODE_NAME: production-1
+
+volumes:
+  go_module_cache:
+  go_build_cache:
+  bun_install_cache:
+  web_node_modules:
