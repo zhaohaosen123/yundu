@@ -37,6 +37,7 @@ if docker ps --format '{{.Names}}' | grep -Fxq new-api-postgres; then
 fi
 
 restart_from_source() {
+  docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
   env SOURCE_DIR="${SOURCE_DIR}" APP_DIR="${APP_DIR}" docker-compose \
     --project-name new-api \
     --env-file "${APP_DIR}/.env.deploy" \
