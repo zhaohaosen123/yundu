@@ -174,7 +174,7 @@ export function Footer(props: FooterProps) {
           },
           {
             text: t('footer.columns.about.links.contact'),
-            href: 'https://docs.newapi.pro/support/community-interaction/',
+            href: '/contact',
           },
           {
             text: t('footer.columns.about.links.features'),
