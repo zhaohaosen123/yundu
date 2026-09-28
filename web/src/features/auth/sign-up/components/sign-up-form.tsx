@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -310,6 +311,11 @@ export function SignUpForm({
               <FormControl>
                 <Input placeholder={t('Enter a referral code')} {...field} />
               </FormControl>
+              <FormDescription>
+                {t(
+                  'If you register with a referral code, the referrer receives 5% of the amount credited each time you successfully top up.'
+                )}
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

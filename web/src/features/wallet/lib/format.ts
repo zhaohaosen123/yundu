@@ -1,24 +1,4 @@
-/*
-Copyright (C) 2023-2026 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
 import { formatLocalCurrencyAmount } from '@/lib/currency'
-
-import { DEFAULT_DISCOUNT_RATE } from '../constants'
 
 // ============================================================================
 // Wallet-specific Formatting Functions
@@ -66,36 +46,67 @@ export function formatCurrency(amount: number | string): string {
 }
 
 /**
- * Get discount label for display (e.g., "20% OFF")
+ * Format platform credit in its canonical USD unit.
  */
-export function getDiscountLabel(discount: number): string {
-  if (discount >= DEFAULT_DISCOUNT_RATE) {
-    return ''
-  }
-  const off = Math.round((1 - discount) * 100)
-  return `${off}% OFF`
+export function formatPlatformCredit(amount: number | string): string {
+  const numeric =
+    typeof amount === 'number' ? amount : Number.parseFloat(String(amount))
+  if (!Number.isFinite(numeric)) return '-'
+
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    currencyDisplay: 'narrowSymbol',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: Math.abs(numeric) >= 1 ? 2 : 4,
+  }).format(numeric)
+}
+
+/**
+ * Format payment amounts in RMB regardless of the quota display preference.
+ */
+export function formatRmbPayment(amount: number | string): string {
+  const numeric =
+    typeof amount === 'number' ? amount : Number.parseFloat(String(amount))
+  if (!Number.isFinite(numeric)) return '-'
+
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'CNY',
+    currencyDisplay: 'narrowSymbol',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: Math.abs(numeric) >= 1 ? 2 : 4,
+  }).format(numeric)
+}
+
+/**
+ * Get the bonus percentage relative to the RMB amount paid.
+ */
+export function getBonusLabel(
+  paymentAmount: number,
+  creditedAmount: number
+): string {
+  if (paymentAmount <= 0 || creditedAmount <= paymentAmount) return ''
+  return `+${Math.round((creditedAmount / paymentAmount - 1) * 100)}%`
 }
 
 /**
  * Calculate pricing details for a preset amount
  */
 export function calculatePresetPricing(
-  presetValue: number,
-  priceRatio: number,
-  discount: number,
-  _legacyExchangeRate: number = 1
+  paymentValue: number,
+  creditedAmount: number,
+  priceRatio: number
 ) {
-  const originalPrice = presetValue * priceRatio
-  const actualPrice = originalPrice * discount
-  const savedAmount = originalPrice - actualPrice
-  const hasDiscount = discount < 1.0
-  const displayValue = presetValue
+  const platformCredit = creditedAmount
+  const paymentAmount = paymentValue * priceRatio
+  const bonusAmount = creditedAmount - paymentValue
+  const hasBonus = bonusAmount > 0
 
   return {
-    displayValue,
-    originalPrice,
-    actualPrice,
-    savedAmount,
-    hasDiscount,
+    platformCredit,
+    paymentAmount,
+    bonusAmount,
+    hasBonus,
   }
 }

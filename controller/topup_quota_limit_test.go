@@ -63,7 +63,7 @@ func TestTopUpQuotaValidation(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			operation_setting.GetGeneralSetting().QuotaDisplayType = tc.displayType
-			quota, err := getTopUpQuota(tc.amount)
+			quota, err := getTopUpQuota(decimal.NewFromInt(tc.amount))
 			if tc.wantErr {
 				require.Error(t, err)
 				return
@@ -72,6 +72,9 @@ func TestTopUpQuotaValidation(t *testing.T) {
 			assert.Equal(t, tc.wantQuota, quota)
 		})
 	}
+
+	operation_setting.GetGeneralSetting().QuotaDisplayType = operation_setting.QuotaDisplayTypeTokens
+	assert.InDelta(t, 50, getPayMoney(decimal.NewFromInt(50)), 0.000001)
 }
 
 func TestValidateTopUpQuotaReturnsMaximumAmount(t *testing.T) {
@@ -92,6 +95,49 @@ func TestValidateTopUpQuotaReturnsMaximumAmount(t *testing.T) {
 	require.NoError(t, err)
 	_, err = validateTopUpQuota(maxAmount + 1)
 	require.EqualError(t, err, fmt.Sprintf("单笔充值数量不能大于 %d", maxAmount))
+}
+
+func TestPresetTopupsCreditConfiguredBonusWithoutChangingPayment(t *testing.T) {
+	oldPrice := operation_setting.Price
+	oldDisplayType := operation_setting.GetGeneralSetting().QuotaDisplayType
+
+	// RMB top-ups stay 1:1 even if a legacy price multiplier is persisted.
+	operation_setting.Price = 7
+	operation_setting.GetGeneralSetting().QuotaDisplayType = operation_setting.QuotaDisplayTypeCNY
+	t.Cleanup(func() {
+		operation_setting.Price = oldPrice
+		operation_setting.GetGeneralSetting().QuotaDisplayType = oldDisplayType
+	})
+	require.Equal(t, map[int]int{50: 55, 100: 120, 200: 250, 500: 700}, operation_setting.GetPresetTopups())
+	require.Equal(t, []int{50, 100, 200, 500}, operation_setting.GetPresetTopupAmounts())
+
+	testCases := []struct {
+		name       string
+		amount     string
+		preset     bool
+		wantCredit string
+	}{
+		{name: "50 RMB preset credits 55 USD", amount: "50", preset: true, wantCredit: "55"},
+		{name: "100 RMB preset credits 120 USD", amount: "100", preset: true, wantCredit: "120"},
+		{name: "200 RMB preset credits 250 USD", amount: "200", preset: true, wantCredit: "250"},
+		{name: "500 RMB preset credits 700 USD", amount: "500", preset: true, wantCredit: "700"},
+		{name: "custom amount matching a preset stays one to one", amount: "50", preset: false, wantCredit: "50"},
+		{name: "removed 10 RMB amount cannot claim a preset bonus", amount: "10", preset: true, wantCredit: "10"},
+		{name: "fractional custom amount cannot claim an integer preset", amount: "50.5", preset: true, wantCredit: "50.5"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			amount, err := decimal.NewFromString(tc.amount)
+			require.NoError(t, err)
+			wantCredit, err := decimal.NewFromString(tc.wantCredit)
+			require.NoError(t, err)
+			assert.True(t, wantCredit.Equal(getCreditedTopUpAmount(amount, tc.preset)))
+			payMoney := getPayMoney(amount)
+			wantPayment, _ := amount.Float64()
+			assert.InDelta(t, wantPayment, payMoney, 0.000001)
+		})
+	}
 }
 
 func TestRequestAmountRejectsTopUpThatCannotBeSettled(t *testing.T) {

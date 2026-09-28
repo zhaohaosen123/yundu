@@ -1,31 +1,9 @@
-/*
-Copyright (C) 2023-2026 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
 import { useState, useEffect, useCallback } from 'react'
 
 import { handleServerError } from '@/lib/handle-server-error'
 
 import { getTopupInfo } from '../api'
-import {
-  generatePresetAmounts,
-  mergePresetAmounts,
-  getMinTopupAmount,
-} from '../lib'
+import { mergePresetAmounts } from '../lib'
 import type {
   TopupInfo,
   PresetAmount,
@@ -129,7 +107,7 @@ function parseAmountOptions(data: unknown): number[] {
     .filter((item) => Number.isFinite(item) && item > 0)
 }
 
-function parseDiscountMap(data: unknown): Record<number, number> {
+function parseNumericMap(data: unknown): Record<number, number> {
   if (!data) {
     return {}
   }
@@ -190,7 +168,7 @@ export function useTopupInfo() {
           response.data.stripe_min_topup
         ),
         amount_options: parseAmountOptions(response.data.amount_options),
-        discount: parseDiscountMap(response.data.discount),
+        preset_topups: parseNumericMap(response.data.preset_topups),
         creem_products: parseCreemProducts(response.data.creem_products),
         waffo_pay_methods: parseWaffoPayMethods(
           response.data.waffo_pay_methods
@@ -199,17 +177,12 @@ export function useTopupInfo() {
 
       setTopupInfo(processedData)
 
-      if (processedData.amount_options.length > 0) {
-        const customPresets = mergePresetAmounts(
+      setPresetAmounts(
+        mergePresetAmounts(
           processedData.amount_options,
-          processedData.discount || {}
+          processedData.preset_topups
         )
-        setPresetAmounts(customPresets)
-      } else {
-        const minTopup = getMinTopupAmount(processedData)
-        const defaultPresets = generatePresetAmounts(minTopup)
-        setPresetAmounts(defaultPresets)
-      }
+      )
     } catch (err) {
       handleServerError(err)
     } finally {

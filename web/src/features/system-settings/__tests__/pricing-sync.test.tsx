@@ -1,21 +1,3 @@
-/*
-Copyright (C) 2023-2026 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   cleanup,
@@ -160,17 +142,34 @@ describe('pricing synchronization', () => {
     ).not.toBeInTheDocument()
     const user = userEvent.setup()
     const copy = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue()
-    await user.click(screen.getByRole('button', { name: 'Copy billing expression' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Copy billing expression' })
+    )
     expect(copy).toHaveBeenCalledWith(expression)
   })
 
   it('shows every parsed tier and falls back to the full expression when pricing cannot be parsed safely', () => {
-    const tiered = 'len <= 128000 ? tier("base", p * 2 + c * 8 + cr * 0.2) : tier("long", p * 4 + c * 12 + cr * 0.4)'
+    const tiered =
+      'len <= 128000 ? tier("base", p * 2 + c * 8 + cr * 0.2) : tier("long", p * 4 + c * 12 + cr * 0.4)'
     const custom = 'tier("custom", p * 2 + c * 8) * max(1, param("factor"))'
-    render(<TableFixture prices={{
-      tiered: { current: {}, upstreams: { upstream: { billing_mode: 'tiered_expr', billing_expr: tiered } } },
-      custom: { current: {}, upstreams: { upstream: { billing_mode: 'tiered_expr', billing_expr: custom } } },
-    }} />)
+    render(
+      <TableFixture
+        prices={{
+          tiered: {
+            current: {},
+            upstreams: {
+              upstream: { billing_mode: 'tiered_expr', billing_expr: tiered },
+            },
+          },
+          custom: {
+            current: {},
+            upstreams: {
+              upstream: { billing_mode: 'tiered_expr', billing_expr: custom },
+            },
+          },
+        }}
+      />
+    )
     expect(screen.queryByText(tiered)).not.toBeInTheDocument()
     expect(screen.getByText(/128,000/)).toBeVisible()
     expect(screen.getByText('$0.2')).toBeVisible()
@@ -411,8 +410,12 @@ describe('pricing synchronization', () => {
     const preview = screen.getByRole('alertdialog', {
       name: 'Preview price changes',
     })
-    expect(within(preview).getByText(/Expression pricing/)).toHaveTextContent('Input: $2')
-    expect(within(preview).getByText(/Expression pricing/)).toHaveTextContent('Output: $8')
+    expect(within(preview).getByText(/Expression pricing/)).toHaveTextContent(
+      'Input: $2'
+    )
+    expect(within(preview).getByText(/Expression pricing/)).toHaveTextContent(
+      'Output: $8'
+    )
     expect(within(preview).queryByText(expression)).not.toBeInTheDocument()
     expect(patch).not.toHaveBeenCalled()
     await user.click(

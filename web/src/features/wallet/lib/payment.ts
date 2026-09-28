@@ -1,24 +1,5 @@
-/*
-Copyright (C) 2023-2026 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
 import {
   PAYMENT_TYPES,
-  DEFAULT_PRESET_MULTIPLIERS,
   DEFAULT_PAYMENT_TYPE,
   DEFAULT_MIN_TOPUP,
 } from '../constants'
@@ -175,27 +156,24 @@ export function getMinTopupAmount(topupInfo: TopupInfo | null): number {
 }
 
 /**
- * Generate preset amounts based on minimum topup
- */
-export function generatePresetAmounts(minAmount: number): PresetAmount[] {
-  return DEFAULT_PRESET_MULTIPLIERS.map((multiplier) => ({
-    value: minAmount * multiplier,
-  }))
-}
-
-/**
- * Merge custom preset amounts with discounts
+ * Merge RMB preset amounts with the USD credit granted for each preset.
  */
 export function mergePresetAmounts(
   amountOptions: number[],
-  discounts: Record<number, number>
+  presetTopups: Record<number, number>
 ): PresetAmount[] {
   if (!amountOptions || amountOptions.length === 0) {
     return []
   }
 
-  return amountOptions.map((amount) => ({
-    value: amount,
-    discount: discounts[amount] || 1.0,
-  }))
+  return amountOptions
+    .map((amount) => ({
+      value: amount,
+      creditedAmount: presetTopups[amount],
+    }))
+    .filter(
+      (preset) =>
+        Number.isFinite(preset.creditedAmount) &&
+        preset.creditedAmount >= preset.value
+    )
 }

@@ -211,25 +211,6 @@ export interface UserChartsFilters {
 }
 
 // ============================================================================
-// API Info Types
-// ============================================================================
-
-export interface ApiInfoItem {
-  url: string
-  route: string
-  description: string
-  color: string
-}
-
-export interface PingStatus {
-  latency: number | null
-  testing: boolean
-  error: boolean
-}
-
-export type PingStatusMap = Record<string, PingStatus>
-
-// ============================================================================
 // Chart Types
 // ============================================================================
 
@@ -261,14 +242,4 @@ export interface AnnouncementItem {
   publishDate?: string
   type?: 'default' | 'ongoing' | 'success' | 'warning' | 'error'
   extra?: string
-}
-
-// ============================================================================
-// FAQ Types
-// ============================================================================
-
-export interface FAQItem {
-  id?: number
-  question: string
-  answer: string
 }

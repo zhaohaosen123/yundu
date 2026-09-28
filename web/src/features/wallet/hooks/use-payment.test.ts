@@ -1,21 +1,3 @@
-/*
-Copyright (C) 2023-2026 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
 import { describe, expect, test } from 'vitest'
 
 import { PAYMENT_TYPES } from '../constants'
@@ -24,7 +6,7 @@ import { requestPaymentAmount } from './use-payment'
 describe('payment amount routing', () => {
   test('uses the dedicated Waffo amount calculator', async () => {
     const calls: string[] = []
-    const amount = await requestPaymentAmount(120, PAYMENT_TYPES.WAFFO, {
+    const amount = await requestPaymentAmount(120, PAYMENT_TYPES.WAFFO, true, {
       regular: async () => {
         calls.push('regular')
         return { success: true, data: '1' }
@@ -34,7 +16,7 @@ describe('payment amount routing', () => {
         return { success: true, data: '2' }
       },
       waffo: async (request) => {
-        calls.push(`waffo:${request.amount}`)
+        calls.push(`waffo:${request.amount}:${request.preset}`)
         return { success: true, data: '18.75' }
       },
       waffoPancake: async () => {
@@ -44,6 +26,6 @@ describe('payment amount routing', () => {
     })
 
     expect(amount).toBe(18.75)
-    expect(calls).toEqual(['waffo:120'])
+    expect(calls).toEqual(['waffo:120:true'])
   })
 })

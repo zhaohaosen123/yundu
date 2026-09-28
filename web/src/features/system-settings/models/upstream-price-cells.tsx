@@ -1,21 +1,3 @@
-/*
-Copyright (C) 2023-2026 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
 import { useTranslation } from 'react-i18next'
 
 import { CopyButton } from '@/components/copy-button'
@@ -41,7 +23,10 @@ export function SyncPriceCell(props: { values: PricingSyncValues }) {
     return <span className='text-muted-foreground'>{t('Unset price')}</span>
   }
   if (kind === 'expression') {
-    const parsed = getSyncExpressionPricing(String(props.values.billing_expr), t)
+    const parsed = getSyncExpressionPricing(
+      String(props.values.billing_expr),
+      t
+    )
     return (
       <div className='min-w-0 flex-1 space-y-1'>
         <div className='flex items-center gap-2'>
@@ -73,7 +58,11 @@ export function SyncPriceCell(props: { values: PricingSyncValues }) {
               </div>
             )}
           </div>
-        ) : <code className='block text-xs! leading-relaxed break-all whitespace-pre-wrap'>{props.values.billing_expr}</code>}
+        ) : (
+          <code className='block text-xs! leading-relaxed break-all whitespace-pre-wrap'>
+            {props.values.billing_expr}
+          </code>
+        )}
       </div>
     )
   }
@@ -89,7 +78,9 @@ export function SyncPriceCell(props: { values: PricingSyncValues }) {
   return <SyncPriceMetrics lines={lines} />
 }
 
-function SyncPriceMetrics(props: { lines: Array<{ label: string; value: string }> }) {
+function SyncPriceMetrics(props: {
+  lines: Array<{ label: string; value: string }>
+}) {
   return (
     <dl className='flex min-w-0 flex-1 flex-wrap gap-x-4 gap-y-2'>
       {props.lines.map((line) => (

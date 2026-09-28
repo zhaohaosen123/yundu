@@ -1,22 +1,11 @@
-/*
-Copyright (C) 2023-2026 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-import { Gift, ExternalLink, Loader2, Receipt, WalletCards } from 'lucide-react'
+import {
+  ArrowRightLeft,
+  Gift,
+  ExternalLink,
+  Loader2,
+  Receipt,
+  WalletCards,
+} from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -37,8 +26,9 @@ import {
 import { cn } from '@/lib/utils'
 
 import {
-  formatCurrency,
-  getDiscountLabel,
+  formatPlatformCredit,
+  formatRmbPayment,
+  getBonusLabel,
   getPaymentIcon,
   getMinTopupAmount,
   calculatePresetPricing,
@@ -69,7 +59,6 @@ interface RechargeFormCardProps {
   topupLink?: string
   loading?: boolean
   priceRatio?: number
-  usdExchangeRate?: number
   onOpenBilling?: () => void
   creemProducts?: CreemProduct[]
   enableCreemTopup?: boolean
@@ -99,7 +88,6 @@ export function RechargeFormCard({
   topupLink,
   loading,
   priceRatio = 1,
-  usdExchangeRate = 1,
   onOpenBilling,
 }: RechargeFormCardProps) {
   const { t } = useTranslation()
@@ -205,6 +193,19 @@ export function RechargeFormCard({
         <div className='space-y-4 sm:space-y-6'>
           {hasConfigurableTopup && (
             <>
+              <div className='bg-muted/35 flex min-h-10 items-center justify-between gap-3 rounded-md border px-3 py-2'>
+                <div className='text-muted-foreground flex min-w-0 items-center gap-2 text-xs'>
+                  <ArrowRightLeft
+                    className='h-4 w-4 shrink-0'
+                    aria-hidden='true'
+                  />
+                  <span>{t('Exchange rate')}</span>
+                </div>
+                <span className='shrink-0 text-sm font-semibold'>
+                  {t('1 CNY = 1 USD')}
+                </span>
+              </div>
+
               {presetAmounts.length > 0 && (
                 <div className='space-y-2.5 sm:space-y-3'>
                   <Label className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
@@ -212,49 +213,56 @@ export function RechargeFormCard({
                   </Label>
                   <div className='grid grid-cols-2 gap-1.5 sm:gap-3 md:grid-cols-4'>
                     {presetAmounts.map((preset) => {
-                      const discount =
-                        preset.discount ||
-                        topupInfo?.discount?.[preset.value] ||
-                        1.0
                       const {
-                        displayValue,
-                        actualPrice,
-                        savedAmount,
-                        hasDiscount,
+                        platformCredit,
+                        paymentAmount: presetPaymentAmount,
+                        bonusAmount,
+                        hasBonus,
                       } = calculatePresetPricing(
                         preset.value,
-                        priceRatio,
-                        discount,
-                        usdExchangeRate
+                        preset.creditedAmount,
+                        priceRatio
                       )
                       return (
                         <Button
                           key={preset.value}
                           variant='outline'
                           className={cn(
-                            'flex min-h-16 flex-col items-start rounded-lg px-3 py-2.5 text-left whitespace-normal sm:min-h-[72px] sm:p-4',
+                            'flex min-h-[92px] flex-col items-start rounded-lg px-3 py-2.5 text-left whitespace-normal sm:min-h-24 sm:p-4',
                             selectedPreset === preset.value
                               ? 'border-foreground bg-foreground/5 dark:border-foreground dark:bg-foreground/10'
                               : 'border-muted'
                           )}
                           onClick={() => onSelectPreset(preset)}
                         >
-                          <div className='flex w-full items-center justify-between'>
-                            <div className='text-base font-semibold sm:text-lg'>
-                              {formatCurrency(displayValue)}
+                          <div className='flex w-full items-start justify-between gap-2'>
+                            <div className='min-w-0'>
+                              <div className='text-muted-foreground text-[10px] leading-4 font-medium uppercase'>
+                                {t('Platform credit')}
+                              </div>
+                              <div className='truncate text-base font-semibold sm:text-lg'>
+                                {formatPlatformCredit(platformCredit)}
+                              </div>
                             </div>
-                            {hasDiscount && (
-                              <div className='text-xs font-medium text-green-600'>
-                                {getDiscountLabel(discount)}
+                            {hasBonus && (
+                              <div className='shrink-0 text-xs font-semibold text-green-600 dark:text-green-400'>
+                                {getBonusLabel(
+                                  preset.value,
+                                  preset.creditedAmount
+                                )}
                               </div>
                             )}
                           </div>
-                          <div className='text-muted-foreground mt-1.5 w-full text-xs sm:mt-2'>
-                            Pay {formatCurrency(actualPrice)}
-                            {hasDiscount && savedAmount > 0 && (
-                              <span className='text-green-600'>
+                          <div className='text-muted-foreground mt-1.5 flex w-full flex-wrap items-center gap-x-1 text-xs sm:mt-2'>
+                            <span>
+                              {t('You Pay')}:{' '}
+                              {formatRmbPayment(presetPaymentAmount)}
+                            </span>
+                            {hasBonus && bonusAmount > 0 && (
+                              <span className='text-green-600 dark:text-green-400'>
                                 {' '}
-                                • Save {formatCurrency(savedAmount)}
+                                • {t('Bonus')}{' '}
+                                {formatPlatformCredit(bonusAmount)}
                               </span>
                             )}
                           </div>
@@ -266,31 +274,48 @@ export function RechargeFormCard({
               )}
 
               <div className='space-y-2.5 sm:space-y-3'>
-                <Label
-                  htmlFor='topup-amount'
-                  className='text-muted-foreground text-xs font-medium tracking-wider uppercase'
-                >
-                  {t('Custom Amount')}
-                </Label>
-                <div className='grid grid-cols-[minmax(0,1fr)_minmax(110px,0.55fr)] gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center'>
-                  <Input
-                    id='topup-amount'
-                    type='number'
-                    value={localAmount}
-                    onChange={(e) => handleAmountChange(e.target.value)}
-                    min={minTopup}
-                    placeholder={`Minimum ${minTopup}`}
-                    className='h-9 text-base sm:h-10 sm:text-lg'
-                  />
+                <div className='flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between'>
+                  <Label
+                    htmlFor='topup-amount'
+                    className='text-muted-foreground text-xs font-medium tracking-wider uppercase'
+                  >
+                    {t('Custom Amount')}
+                  </Label>
+                  <span
+                    id='custom-amount-description'
+                    className='text-muted-foreground text-xs'
+                  >
+                    {t('Custom amounts do not receive preset bonuses.')}
+                  </span>
+                </div>
+                <div className='grid grid-cols-[minmax(0,1fr)_minmax(132px,0.65fr)] gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center'>
+                  <div className='relative'>
+                    <span
+                      className='text-muted-foreground pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm'
+                      aria-hidden='true'
+                    >
+                      ¥
+                    </span>
+                    <Input
+                      id='topup-amount'
+                      type='number'
+                      value={localAmount}
+                      onChange={(e) => handleAmountChange(e.target.value)}
+                      min={minTopup}
+                      placeholder={`Minimum ${minTopup}`}
+                      aria-describedby='custom-amount-description'
+                      className='h-9 pl-7 text-base sm:h-10 sm:text-lg'
+                    />
+                  </div>
                   <div className='bg-muted/30 flex min-h-9 items-center justify-between gap-2 rounded-md border px-3 lg:min-w-52'>
-                    <span className='text-muted-foreground truncate text-xs'>
+                    <span className='text-muted-foreground text-xs whitespace-nowrap'>
                       {t('Amount to pay:')}
                     </span>
                     {calculating ? (
                       <Skeleton className='h-5 w-16' />
                     ) : (
                       <span className='text-sm font-semibold'>
-                        {formatCurrency(paymentAmount)}
+                        {formatRmbPayment(paymentAmount)}
                       </span>
                     )}
                   </div>

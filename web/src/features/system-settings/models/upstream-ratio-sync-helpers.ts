@@ -1,24 +1,9 @@
-/*
-Copyright (C) 2023-2026 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
 import { createContext, useContext } from 'react'
 
-import { BILLING_PRICING_VARS, splitBillingExprAndRequestRules } from '@/features/pricing/lib/billing-expr'
+import {
+  BILLING_PRICING_VARS,
+  splitBillingExprAndRequestRules,
+} from '@/features/pricing/lib/billing-expr'
 import { tryParseVisualConfig } from '@/features/pricing/lib/tier-expr'
 
 import type { PricingSyncValues } from '../types'
@@ -127,8 +112,12 @@ export function getSyncPriceLines(
   return lines
 }
 
-export function getSyncExpressionPricing(expression: string, t: (key: string) => string) {
-  const { billingExpr, requestRuleExpr } = splitBillingExprAndRequestRules(expression)
+export function getSyncExpressionPricing(
+  expression: string,
+  t: (key: string) => string
+) {
+  const { billingExpr, requestRuleExpr } =
+    splitBillingExprAndRequestRules(expression)
   const config = tryParseVisualConfig(billingExpr)
   if (!config) return null
   // Do not turn malformed or overflowing upstream numbers into free prices.
@@ -136,17 +125,25 @@ export function getSyncExpressionPricing(expression: string, t: (key: string) =>
   for (const match of body.matchAll(/\*\s*([+\-\d.eE]+)/g)) {
     if (!Number.isFinite(Number(match[1])) || Number(match[1]) < 0) return null
   }
-  const fields = BILLING_PRICING_VARS.filter((field) =>
-    field.tierField && new RegExp(`\\b${field.key}\\s*\\*`).test(body)
+  const fields = BILLING_PRICING_VARS.filter(
+    (field) =>
+      field.tierField && new RegExp(`\\b${field.key}\\s*\\*`).test(body)
   )
-  const conditionLabels = { p: t('Input tokens'), c: t('Output tokens'), len: t('Length') }
+  const conditionLabels = {
+    p: t('Input tokens'),
+    c: t('Output tokens'),
+    len: t('Length'),
+  }
   return {
     requestRuleExpr,
     tiers: config.tiers.map((tier) => ({
       label: tier.label,
-      condition: tier.conditions.map((condition) =>
-        `${conditionLabels[condition.var]} ${condition.op} ${Number(condition.value).toLocaleString()}`
-      ).join(' ∧ '),
+      condition: tier.conditions
+        .map(
+          (condition) =>
+            `${conditionLabels[condition.var]} ${condition.op} ${Number(condition.value).toLocaleString()}`
+        )
+        .join(' ∧ '),
       lines: fields.map((field) => ({
         label: t(field.shortLabel),
         value: `$${formatPricingNumber(Number(tier[field.tierField!]))}`,
@@ -167,10 +164,14 @@ export function describeSyncPrice(
         t('Expression pricing'),
         `CNY / ${t('1M token')}`,
         ...parsed.tiers.flatMap((tier) => [
-          ...(parsed.tiers.length > 1 ? [tier.condition || tier.label || t('Default')] : []),
+          ...(parsed.tiers.length > 1
+            ? [tier.condition || tier.label || t('Default')]
+            : []),
           ...tier.lines.map((line) => `${line.label}: ${line.value}`),
         ]),
-        ...(parsed.requestRuleExpr ? [`${t('Includes request rules')}: ${parsed.requestRuleExpr}`] : []),
+        ...(parsed.requestRuleExpr
+          ? [`${t('Includes request rules')}: ${parsed.requestRuleExpr}`]
+          : []),
       ].join('\n')
     }
     return `${t('Expression pricing')}\n${values.billing_expr}`

@@ -23,7 +23,6 @@ import {
   Gauge,
   Zap,
   Flame,
-  TrendingUp,
   Activity,
   type LucideIcon,
 } from 'lucide-react'
@@ -92,8 +91,8 @@ export function useModelStatCardsConfig(): StatCardConfig[] {
 
 export function useSummaryCardsConfig(totals: {
   todayUsageDisplay: string
-  usedDisplay: string
-  requestCountDisplay: string
+  todayRequestsDisplay: string
+  todayTokensDisplay: string
   currencyLabel: string
   currencyEnabled: boolean
 }) {
@@ -110,20 +109,18 @@ export function useSummaryCardsConfig(totals: {
       icon: Flame,
     },
     {
-      key: 'usage',
-      title: t('Historical Usage'),
-      value: totals.usedDisplay,
-      description: totals.currencyEnabled
-        ? `${t('Total consumed')} (${totals.currencyLabel})`
-        : t('Total consumed quota'),
-      icon: TrendingUp,
+      key: 'requests',
+      title: t('Requests'),
+      value: totals.todayRequestsDisplay,
+      description: t('Last 24h usage'),
+      icon: Activity,
     },
     {
-      key: 'requests',
-      title: t('Request Count'),
-      value: totals.requestCountDisplay,
-      description: t('Total requests made'),
-      icon: Activity,
+      key: 'tokens',
+      title: t('Tokens'),
+      value: totals.todayTokensDisplay,
+      description: t('Token usage'),
+      icon: Layers,
     },
   ]
 }

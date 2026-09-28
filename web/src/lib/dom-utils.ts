@@ -1,34 +1,42 @@
-/*
-Copyright (C) 2023-2026 QuantumNous
+import { DEFAULT_LOGO, DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
+function normalizeBrandValue(value: unknown, fallback: string): string {
+  return typeof value === 'string' && value.trim() ? value.trim() : fallback
+}
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
+export function applyDocumentTitleToDom(systemName: unknown): void {
+  if (typeof document === 'undefined') return
+  const name = normalizeBrandValue(systemName, DEFAULT_SYSTEM_NAME)
+  document.title = name
+  const metaTitle =
+    document.querySelector<HTMLMetaElement>('meta[name="title"]')
+  metaTitle?.setAttribute('content', name)
+}
 
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
-export function applyFaviconToDom(url: string) {
-  if (typeof document === 'undefined' || !url) return
+export function applyFaviconToDom(url: unknown): void {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return
   try {
-    const next = new URL(url, window.location.href).href
+    const next = new URL(
+      normalizeBrandValue(url, DEFAULT_LOGO),
+      window.location.href
+    ).href
     const existing =
       document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]')
     if (existing.length === 1 && existing[0].href === next) return
     const link = document.createElement('link')
     link.rel = 'icon'
-    link.href = url
+    link.href = next
     existing.forEach((l) => l.remove())
     document.head.appendChild(link)
   } catch {
     // Ignore malformed URLs
   }
+}
+
+export function applySystemBrandingToDom(
+  systemName: unknown,
+  logo: unknown
+): void {
+  applyDocumentTitleToDom(systemName)
+  applyFaviconToDom(logo)
 }

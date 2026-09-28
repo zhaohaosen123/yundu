@@ -1,28 +1,13 @@
-/*
-Copyright (C) 2023-2026 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, renderHook, waitFor } from '@testing-library/react'
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
+import { useUpdateOption } from '@/features/system-settings/hooks/use-update-option'
 import { useStatus } from '@/hooks/use-status'
+import { useSystemConfig } from '@/hooks/use-system-config'
 import { api } from '@/lib/api'
+import { DEFAULT_LOGO, DEFAULT_SYSTEM_NAME } from '@/lib/constants'
 import {
   getModuleAccessForGuard,
   type HeaderNavModule,
@@ -40,10 +25,12 @@ import { useSystemConfigStore } from '@/stores/system-config-store'
  */
 
 type ApiMethod = (url: string) => Promise<{ data: unknown }>
-type MockableApi = { get: ApiMethod }
+type ApiPutMethod = (url: string, data?: unknown) => Promise<{ data: unknown }>
+type MockableApi = { get: ApiMethod; put: ApiPutMethod }
 
 const apiClient = api as unknown as MockableApi
 const originalGet = apiClient.get
+const originalPut = apiClient.put
 
 let statusRequests: string[] = []
 const queryClients: QueryClient[] = []
@@ -78,6 +65,10 @@ function wrapper(queryClient: QueryClient) {
 beforeEach(() => {
   statusRequests = []
   window.localStorage.clear()
+  document
+    .querySelectorAll('link[rel~="icon"], meta[name="title"]')
+    .forEach((element) => element.remove())
+  document.title = ''
   useSystemConfigStore.setState(useSystemConfigStore.getInitialState(), true)
 })
 
@@ -85,8 +76,105 @@ afterEach(() => {
   cleanup()
   queryClients.splice(0).forEach((client) => client.clear())
   apiClient.get = originalGet
+  apiClient.put = originalPut
   window.localStorage.clear()
+  document
+    .querySelectorAll('link[rel~="icon"], meta[name="title"]')
+    .forEach((element) => element.remove())
+  document.title = ''
   useSystemConfigStore.setState(useSystemConfigStore.getInitialState(), true)
+})
+
+describe('system branding DOM synchronization', () => {
+  test('collapses duplicate favicon sources and uses defaults for empty branding', async () => {
+    for (const href of ['/logo.png?template', '/favicon.ico']) {
+      const link = document.createElement('link')
+      link.rel = 'icon'
+      link.href = href
+      document.head.appendChild(link)
+    }
+    const metaTitle = document.createElement('meta')
+    metaTitle.name = 'title'
+    metaTitle.content = 'Stale title'
+    document.head.appendChild(metaTitle)
+    useSystemConfigStore.getState().setConfig({ systemName: '', logo: '' })
+
+    const queryClient = createQueryClient()
+    const hook = renderHook(() => useSystemConfig(), {
+      wrapper: wrapper(queryClient),
+    })
+
+    await waitFor(() => {
+      const icons =
+        document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]')
+      expect(icons).toHaveLength(1)
+      expect(icons[0].href).toBe(
+        new URL(DEFAULT_LOGO, window.location.href).href
+      )
+    })
+    expect(document.title).toBe(DEFAULT_SYSTEM_NAME)
+    expect(metaTitle.content).toBe(DEFAULT_SYSTEM_NAME)
+    expect(hook.result.current.logo).toBe(DEFAULT_LOGO)
+    expect(hook.result.current.systemName).toBe(DEFAULT_SYSTEM_NAME)
+  })
+
+  test('updates the page title and favicon when branding changes in place', async () => {
+    const metaTitle = document.createElement('meta')
+    metaTitle.name = 'title'
+    document.head.appendChild(metaTitle)
+    const queryClient = createQueryClient()
+    renderHook(() => useSystemConfig(), {
+      wrapper: wrapper(queryClient),
+    })
+
+    act(() => {
+      useSystemConfigStore.getState().setConfig({
+        systemName: '星河网关',
+        logo: '/brand-updated.png',
+      })
+    })
+
+    await waitFor(() => {
+      expect(document.title).toBe('星河网关')
+      expect(metaTitle.content).toBe('星河网关')
+      const icons =
+        document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]')
+      expect(icons).toHaveLength(1)
+      expect(icons[0].href).toBe(
+        new URL('/brand-updated.png', window.location.href).href
+      )
+    })
+  })
+})
+
+describe('system branding option refresh', () => {
+  test.each(['Logo', 'SystemName', 'Footer'])(
+    'refreshes status after saving %s',
+    async (key) => {
+      const queryClient = createQueryClient()
+      stubStatusEndpoint('before-update')
+      await ensureStatus(queryClient)
+      statusRequests = []
+      stubStatusEndpoint('after-update')
+      apiClient.put = async (url) => {
+        expect(url).toBe('/api/option/')
+        return { data: { success: true, message: '' } }
+      }
+      const mutation = renderHook(() => useUpdateOption(), {
+        wrapper: wrapper(queryClient),
+      })
+
+      await act(async () => {
+        await mutation.result.current.mutateAsync({ key, value: 'updated' })
+      })
+
+      await waitFor(() => expect(statusRequests).toEqual(['/api/status']))
+      expect(
+        queryClient.getQueryData<Record<string, unknown>>(STATUS_QUERY_KEY)
+          ?.system_name
+      ).toBe('after-update')
+    }
+  )
 })
 
 describe('shared status query deduplication', () => {

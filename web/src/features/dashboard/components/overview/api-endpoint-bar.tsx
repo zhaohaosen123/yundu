@@ -11,36 +11,52 @@ import { useTranslation } from 'react-i18next'
 
 import { CopyButton } from '@/components/copy-button'
 import { IconBadge } from '@/components/ui/icon-badge'
+import { useStatus } from '@/hooks/use-status'
 
-function getCurrentApiBaseUrl(): string {
+function getCurrentOrigin(): string {
   if (typeof window === 'undefined') return ''
-  return `${window.location.origin}/v1/`
+  return window.location.origin
+}
+
+function buildApiBaseUrl(value: unknown): string {
+  const source = typeof value === 'string' ? value.trim() : ''
+  const serverAddress = source || getCurrentOrigin()
+  if (!serverAddress) return ''
+  const normalized = serverAddress.replace(/\/+$/, '')
+  if (normalized.endsWith('/v1')) return `${normalized}/`
+  if (normalized.endsWith('/v1/chat/completions')) {
+    return `${normalized.slice(0, -'/chat/completions'.length)}/`
+  }
+  return `${normalized}/v1/`
 }
 
 export function ApiEndpointBar() {
   const { t } = useTranslation()
-  const apiBaseUrl = getCurrentApiBaseUrl()
+  const { status } = useStatus()
+  const configuredAddress =
+    status?.server_address ??
+    status?.serverAddress ??
+    status?.data?.server_address ??
+    (status?.data as Record<string, unknown> | undefined)?.serverAddress
+  const apiBaseUrl = buildApiBaseUrl(configuredAddress)
 
   if (!apiBaseUrl) return null
 
   return (
-    <section
-      className='bg-card flex flex-col gap-3 rounded-xl border px-3 py-3 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:px-4'
+    <div
+      className='bg-muted/40 flex h-8 max-w-full min-w-0 items-center gap-2 rounded-md border py-1 pr-1 pl-2'
       aria-labelledby='dashboard-api-url-label'
     >
-      <div className='flex min-w-0 items-center gap-3'>
-        <IconBadge tone='info' size='sm'>
+      <div className='flex min-w-0 flex-1 items-center gap-2'>
+        <IconBadge tone='info' size='xs'>
           <Route aria-hidden='true' />
         </IconBadge>
         <div className='min-w-0 flex-1'>
-          <div
-            id='dashboard-api-url-label'
-            className='text-muted-foreground text-xs font-medium'
-          >
+          <span id='dashboard-api-url-label' className='sr-only'>
             {t('API URL')}
-          </div>
+          </span>
           <div
-            className='mt-0.5 select-all overflow-x-auto font-mono text-sm font-medium whitespace-nowrap'
+            className='max-w-[42vw] truncate font-mono text-xs font-medium select-all sm:max-w-52'
             title={apiBaseUrl}
           >
             {apiBaseUrl}
@@ -49,15 +65,14 @@ export function ApiEndpointBar() {
       </div>
       <CopyButton
         value={apiBaseUrl}
-        variant='outline'
-        size='sm'
-        className='w-full sm:w-auto'
+        variant='ghost'
+        size='icon'
+        className='size-6 shrink-0'
+        iconClassName='size-3.5'
         tooltip={t('Copy URL')}
         successTooltip={t('Copied!')}
         aria-label={t('Copy URL')}
-      >
-        <span>{t('Copy URL')}</span>
-      </CopyButton>
-    </section>
+      />
+    </div>
   )
 }

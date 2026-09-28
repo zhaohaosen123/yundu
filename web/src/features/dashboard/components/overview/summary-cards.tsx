@@ -18,11 +18,10 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ArrowRight, Flame, ShieldCheck, TrendingDown } from 'lucide-react'
-import { useMemo } from 'react'
+import { ArrowRight, RefreshCw, ShieldCheck, TrendingDown } from 'lucide-react'
+import { useMemo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { StaggerContainer, StaggerItem } from '@/components/page-transition'
 import { Button } from '@/components/ui/button'
 import { getUserQuotaDates } from '@/features/dashboard/api'
 import { DASHBOARD_REFRESH_INTERVAL_MS } from '@/features/dashboard/constants'
@@ -40,7 +39,7 @@ import { StatCard } from '../ui/stat-card'
 
 const SUMMARY_SPARKLINE_BUCKETS = 12
 
-type SummarySparklineKey = 'balance' | 'usage' | 'requests'
+type SummarySparklineKey = 'balance' | 'usage' | 'requests' | 'tokens'
 
 function getBucketIndex(
   timestamp: number,
@@ -61,6 +60,7 @@ function buildSummarySparklines(
 ): Record<SummarySparklineKey, number[]> {
   const usage = Array.from({ length: SUMMARY_SPARKLINE_BUCKETS }, () => 0)
   const requests = Array.from({ length: SUMMARY_SPARKLINE_BUCKETS }, () => 0)
+  const tokens = Array.from({ length: SUMMARY_SPARKLINE_BUCKETS }, () => 0)
 
   for (const item of data) {
     const timestamp = Number(item.created_at) || start
@@ -72,6 +72,7 @@ function buildSummarySparklines(
     )
     usage[index] += Number(item.quota) || 0
     requests[index] += Number(item.count) || 0
+    tokens[index] += Number(item.token_used) || 0
   }
 
   let balance = currentBalance
@@ -89,6 +90,7 @@ function buildSummarySparklines(
     balance: balanceTrend,
     usage,
     requests,
+    tokens,
   }
 }
 
@@ -98,6 +100,7 @@ function getSummarySparkline(
 ): number[] | undefined {
   if (key === 'usage') return sparklineData.usage
   if (key === 'requests') return sparklineData.requests
+  if (key === 'tokens') return sparklineData.tokens
   return undefined
 }
 
@@ -143,37 +146,24 @@ export function SummaryCards() {
   const user = useAuthStore((state) => state.auth.user)
   const { status, loading } = useStatus()
 
-  const summaryTimeRange = useMemo(() => computeTimeRange(1), [])
+  const summaryTimeRange = computeTimeRange(1)
   const remainQuota = Number(user?.quota ?? 0)
-  const usedQuota = Number(user?.used_quota ?? 0)
-  const requestCount = Number(user?.request_count ?? 0)
 
   const usageTrendQuery = useQuery({
-    queryKey: [
-      'dashboard',
-      'overview',
-      'summary-sparklines',
-      summaryTimeRange.start_timestamp,
-      summaryTimeRange.end_timestamp,
-    ],
-    queryFn: async () =>
-      requireServerSuccess(
+    queryKey: ['dashboard', 'overview', 'summary-sparklines'],
+    queryFn: async () => {
+      const range = computeTimeRange(1)
+      return requireServerSuccess(
         await getUserQuotaDates({
-          start_timestamp: summaryTimeRange.start_timestamp,
-          end_timestamp: summaryTimeRange.end_timestamp,
+          start_timestamp: range.start_timestamp,
+          end_timestamp: range.end_timestamp,
           default_time: 'hour',
         })
-      ),
+      )
+    },
     staleTime: 60 * 1000,
     refetchInterval: DASHBOARD_REFRESH_INTERVAL_MS,
   })
-
-  const summaryValues = useMemo(() => {
-    return {
-      usedDisplay: formatQuota(usedQuota),
-      requestCountDisplay: formatNumber(requestCount),
-    }
-  }, [requestCount, usedQuota])
 
   const currencyEnabledFromStore = isCurrencyDisplayEnabled()
   const statusCurrencyFlag =
@@ -210,14 +200,36 @@ export function SummaryCards() {
       ),
     [usageTrendQuery.data?.data]
   )
+  const recentRequests = useMemo(
+    () =>
+      (usageTrendQuery.data?.data ?? []).reduce(
+        (total, item) => total + (Number(item.count) || 0),
+        0
+      ),
+    [usageTrendQuery.data?.data]
+  )
+  const recentTokens = useMemo(
+    () =>
+      (usageTrendQuery.data?.data ?? []).reduce(
+        (total, item) => total + (Number(item.token_used) || 0),
+        0
+      ),
+    [usageTrendQuery.data?.data]
+  )
 
+  const usageUnavailable = usageTrendQuery.isError
   const healthLevel = getHealthLevel(remainQuota, recentUsage)
-  const healthCfg = HEALTH_CONFIG[healthLevel]
+  const healthCfg =
+    usageUnavailable && remainQuota > 0
+      ? { dotClass: 'bg-muted-foreground', labelKey: 'Failed to load' }
+      : HEALTH_CONFIG[healthLevel]
   const runwayDays = getRunwayDays(remainQuota, recentUsage)
 
   const todayUsageDisplay = formatQuota(recentUsage)
   let runwayDisplay: string
-  if (runwayDays !== null) {
+  if (usageUnavailable && remainQuota > 0) {
+    runwayDisplay = t('Failed to load')
+  } else if (runwayDays !== null) {
     if (runwayDays < 1) {
       runwayDisplay = t('Less than 1 day left')
     } else if (runwayDays > 999) {
@@ -232,8 +244,9 @@ export function SummaryCards() {
   }
 
   const items = useSummaryCardsConfig({
-    ...summaryValues,
     todayUsageDisplay,
+    todayRequestsDisplay: formatNumber(recentRequests),
+    todayTokensDisplay: formatNumber(recentTokens),
     currencyEnabled,
     currencyLabel,
   }).map((config, index) => {
@@ -251,110 +264,129 @@ export function SummaryCards() {
           ? sparklineData.usage
           : getSummarySparkline(config.key, sparklineData),
       sparklineVariant: 'line' as const,
+      loading: loading || usageTrendQuery.isPending,
+      error: usageUnavailable,
     }
   })
+  let runwayIcon: ReactNode
+  if (usageUnavailable && remainQuota > 0) {
+    runwayIcon = (
+      <RefreshCw className='text-muted-foreground size-4' aria-hidden='true' />
+    )
+  } else if (healthLevel === 'healthy') {
+    runwayIcon = (
+      <ShieldCheck className='text-success size-4' aria-hidden='true' />
+    )
+  } else {
+    runwayIcon = (
+      <TrendingDown
+        className={cn(
+          'size-4',
+          healthLevel === 'critical' ? 'text-destructive' : 'text-warning'
+        )}
+        aria-hidden='true'
+      />
+    )
+  }
 
   return (
-    <div className='bg-card overflow-hidden rounded-2xl border shadow-xs'>
-      <div className='grid xl:grid-cols-[minmax(0,1fr)_19rem]'>
-        <div className='flex flex-col gap-2.5 p-3 sm:gap-3 sm:p-5'>
-          <div className='flex flex-wrap items-start justify-between gap-3'>
-            <div className='flex flex-col gap-1'>
-              <h3 className='text-sm font-semibold sm:text-base'>
-                {t('Usage at a glance')}
-              </h3>
-              <p className='text-muted-foreground text-xs sm:text-sm'>
-                {t('Monitor balance, usage, and request volume')}
-              </p>
-            </div>
+    <section className='border-border/70 bg-card overflow-hidden border-y'>
+      <div className='grid xl:grid-cols-[minmax(19rem,0.72fr)_minmax(0,1.28fr)]'>
+        <div className='border-border/70 relative flex min-h-60 flex-col justify-between overflow-hidden border-b bg-[linear-gradient(145deg,color-mix(in_oklch,var(--primary)_10%,var(--card))_0%,var(--card)_58%,color-mix(in_oklch,var(--chart-2)_6%,var(--card))_100%)] p-5 sm:p-6 xl:border-r xl:border-b-0'>
+          <div className='border-primary/10 pointer-events-none absolute -top-20 -right-16 size-56 rounded-full border' />
+          <div className='border-primary/10 pointer-events-none absolute -top-8 -right-4 size-32 rounded-full border' />
+
+          <div className='relative flex items-center justify-between gap-3'>
+            <span className='text-muted-foreground text-xs font-semibold tracking-[0.14em] uppercase'>
+              {t('Credit remaining')}
+            </span>
+            <span className='bg-background/70 flex items-center gap-1.5 rounded-full border px-2.5 py-1'>
+              <span
+                className={cn('size-1.5 rounded-full', healthCfg.dotClass)}
+                aria-hidden='true'
+              />
+              <span className='text-muted-foreground text-[11px] font-medium'>
+                {t(healthCfg.labelKey)}
+              </span>
+            </span>
           </div>
-          <StaggerContainer className='grid grid-cols-3 gap-1.5 sm:gap-3'>
-            {items.map((it) => (
-              <StaggerItem
-                key={it.key}
-                className='bg-background/60 rounded-lg border px-2 py-1.5 sm:rounded-xl sm:p-3'
-              >
-                <StatCard
-                  title={it.title}
-                  value={it.value}
-                  description={it.desc}
-                  icon={it.icon}
-                  tone={it.tone}
-                  sparkline={it.sparkline}
-                  sparklineVariant={it.sparklineVariant}
-                  loading={loading}
-                  compactMobile
-                />
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        </div>
 
-        <div className='flex flex-col justify-between gap-3 border-t bg-[linear-gradient(135deg,color-mix(in_oklch,var(--overview-accent-2)_12%,var(--background))_0%,color-mix(in_oklch,oklch(0.82_0.04_155)_8%,var(--background))_48%,color-mix(in_oklch,var(--overview-accent-1)_7%,var(--background))_100%)] p-3 sm:gap-4 sm:p-5 xl:border-t-0 xl:border-l'>
-          <div className='flex flex-col gap-2 sm:gap-3'>
-            <div className='flex items-center justify-between'>
-              <span className='text-muted-foreground text-xs font-medium'>
-                {t('Credit remaining')}
-              </span>
-              <span className='flex items-center gap-1.5'>
-                <span
-                  className={cn('size-1.5 rounded-full', healthCfg.dotClass)}
-                  aria-hidden='true'
-                />
-                <span className='text-muted-foreground text-[11px] font-medium'>
-                  {t(healthCfg.labelKey)}
-                </span>
-              </span>
-            </div>
-
-            <div className='font-mono text-xl font-semibold tracking-tight sm:text-2xl'>
+          <div className='relative py-5'>
+            <div className='font-mono text-4xl font-semibold tracking-[-0.05em] tabular-nums sm:text-5xl'>
               {formatQuota(remainQuota)}
             </div>
-
-            <div className='grid grid-cols-2 gap-2'>
-              <div className='bg-background/60 rounded-lg px-2.5 py-2'>
-                <div className='text-muted-foreground flex items-center gap-1 text-[11px] leading-none font-medium'>
-                  <Flame className='size-3 shrink-0' aria-hidden='true' />
-                  <span className='truncate'>{t('Last 24h usage')}</span>
-                </div>
-                <div className='text-foreground mt-1.5 truncate text-xs font-semibold tabular-nums'>
-                  {formatQuota(recentUsage)}
-                </div>
-              </div>
-              <div className='bg-background/60 rounded-lg px-2.5 py-2'>
-                <div className='text-muted-foreground flex items-center gap-1 text-[11px] leading-none font-medium'>
-                  {runwayDays !== null && runwayDays < 3 ? (
-                    <TrendingDown
-                      className='size-3 shrink-0'
-                      aria-hidden='true'
-                    />
-                  ) : (
-                    <ShieldCheck
-                      className='size-3 shrink-0'
-                      aria-hidden='true'
-                    />
-                  )}
-                  <span className='truncate'>{t('Runway')}</span>
-                </div>
-                <div
-                  className={cn(
-                    'mt-1.5 truncate text-xs font-semibold tabular-nums',
-                    healthLevel === 'critical' && 'text-destructive',
-                    healthLevel === 'caution' && 'text-warning'
-                  )}
-                >
-                  {runwayDisplay}
-                </div>
-              </div>
+            <div className='mt-4 flex items-center gap-2'>
+              {runwayIcon}
+              <span className='text-muted-foreground text-sm'>
+                {t('Runway')}
+              </span>
+              <span
+                className={cn(
+                  'text-sm font-semibold tabular-nums',
+                  healthLevel === 'critical' && 'text-destructive',
+                  healthLevel === 'caution' && 'text-warning'
+                )}
+              >
+                {runwayDisplay}
+              </span>
             </div>
           </div>
 
-          <Button className='justify-between' render={<Link to='/wallet' />}>
+          <Button
+            variant='outline'
+            className='bg-background/70 relative w-full justify-between sm:w-44'
+            render={<Link to='/wallet' />}
+          >
             <span>{t('Wallet')}</span>
             <ArrowRight data-icon='inline-end' />
           </Button>
         </div>
+
+        <div className='flex min-w-0 flex-col px-4 py-5 sm:px-6 sm:py-6'>
+          <div className='flex flex-wrap items-start justify-between gap-3'>
+            <div>
+              <h3 className='text-base font-semibold sm:text-lg'>
+                {t('Usage at a glance')}
+              </h3>
+              <p className='text-muted-foreground mt-1 text-xs sm:text-sm'>
+                {t('Monitor balance, usage, and request volume')}
+              </p>
+            </div>
+            {usageUnavailable ? (
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={() => void usageTrendQuery.refetch()}
+              >
+                <RefreshCw data-icon='inline-start' />
+                {t('Retry')}
+              </Button>
+            ) : null}
+          </div>
+
+          <div className='border-border/60 mt-5 grid flex-1 divide-y border-t sm:grid-cols-3 sm:divide-x sm:divide-y-0'>
+            {items.map((item) => (
+              <div
+                key={item.key}
+                className='min-w-0 px-1 py-4 sm:px-5 sm:py-5 first:sm:pl-0 last:sm:pr-0'
+              >
+                <StatCard
+                  title={item.title}
+                  value={item.value}
+                  description={item.desc}
+                  icon={item.icon}
+                  tone={item.tone}
+                  sparkline={item.sparkline}
+                  sparklineVariant={item.sparklineVariant}
+                  loading={item.loading}
+                  error={item.error}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   )
 }

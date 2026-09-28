@@ -45,7 +45,7 @@ function ContactQrCard(props: ContactQrCardProps) {
   return (
     <Card className='w-full'>
       <CardHeader className='gap-2 px-5 pt-2 sm:px-6'>
-        <div className='text-primary flex size-9 items-center justify-center rounded-lg bg-primary/10'>
+        <div className='text-primary bg-primary/10 flex size-9 items-center justify-center rounded-lg'>
           <HugeiconsIcon icon={QrCode01Icon} strokeWidth={2} />
         </div>
         <CardTitle className='pt-1 text-xl'>{props.t(props.title)}</CardTitle>
@@ -58,7 +58,7 @@ function ContactQrCard(props: ContactQrCardProps) {
         <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
           <button
             type='button'
-            className='bg-muted/30 group flex h-80 w-full cursor-zoom-in items-center justify-center rounded-lg p-4 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'
+            className='bg-muted/30 group focus-visible:ring-ring/50 flex h-80 w-full cursor-zoom-in items-center justify-center rounded-lg p-4 focus-visible:ring-3 focus-visible:outline-none'
             aria-label={props.t('Open {{name}} QR code', {
               name: props.t(props.title),
             })}
@@ -110,7 +110,7 @@ export function Contact() {
 
   return (
     <PublicLayout showMainContainer={false}>
-      <main className='mx-auto min-h-[calc(100svh-4rem)] w-full max-w-5xl px-4 pb-20 pt-28 sm:px-6'>
+      <main className='mx-auto min-h-[calc(100svh-4rem)] w-full max-w-5xl px-4 pt-28 pb-20 sm:px-6'>
         <div className='mx-auto mb-10 max-w-2xl text-center'>
           <p className='text-primary text-xs font-semibold tracking-[0.18em] uppercase'>
             {t('QQ Support')}

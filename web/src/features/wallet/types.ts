@@ -1,21 +1,3 @@
-/*
-Copyright (C) 2023-2026 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
 // ============================================================================
 // Wallet Type Definitions
 // ============================================================================
@@ -132,8 +114,8 @@ export interface TopupInfo {
   stripe_min_topup: number
   /** Preset amount options */
   amount_options: number[]
-  /** Discount rates by amount */
-  discount: Record<number, number>
+  /** Preset RMB payment amount to USD credit mapping */
+  preset_topups: Record<number, number>
   /** Optional topup link for purchasing codes */
   topup_link?: string
   /** Whether Creem topup is enabled */
@@ -159,13 +141,13 @@ export interface TopupInfo {
 }
 
 /**
- * Preset amount option with optional discount
+ * Preset top-up package
  */
 export interface PresetAmount {
-  /** Preset amount value */
+  /** RMB amount paid */
   value: number
-  /** Optional discount rate (0-1) */
-  discount?: number
+  /** USD credit granted */
+  creditedAmount: number
 }
 
 /**
@@ -184,6 +166,8 @@ export interface PaymentRequest {
   amount: number
   /** Payment method identifier */
   payment_method: string
+  /** Whether the amount came from a configured preset */
+  preset?: boolean
 }
 
 /**
@@ -210,6 +194,8 @@ export interface WaffoPancakePaymentRequest {
 export interface AmountRequest {
   /** Topup amount to calculate */
   amount: number
+  /** Whether the amount came from a configured preset */
+  preset?: boolean
 }
 
 /**
