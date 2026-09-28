@@ -28,19 +28,23 @@ export function usePricingData(enabled = true) {
 
     const vendorMap = new Map(data.vendors.map((v) => [v.id, v]))
 
-    return data.data.map((model) => {
-      const vendor = model.vendor_id
-        ? vendorMap.get(model.vendor_id)
-        : undefined
-      return {
-        ...model,
-        key: model.model_name,
-        vendor_name: vendor?.name,
-        vendor_icon: vendor?.icon,
-        vendor_description: vendor?.description,
-        group_ratio: data.group_ratio,
-      }
-    })
+    return data.data
+      .filter(
+        (model) => !model.model_name?.toLowerCase().startsWith('project-')
+      )
+      .map((model) => {
+        const vendor = model.vendor_id
+          ? vendorMap.get(model.vendor_id)
+          : undefined
+        return {
+          ...model,
+          key: model.model_name,
+          vendor_name: vendor?.name,
+          vendor_icon: vendor?.icon,
+          vendor_description: vendor?.description,
+          group_ratio: data.group_ratio,
+        }
+      })
   }, [data])
 
   return {

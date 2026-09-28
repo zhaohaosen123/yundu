@@ -8,6 +8,7 @@ import {
   Key,
   LayoutDashboard,
   ListTodo,
+  BadgeDollarSign,
   MessageSquare,
   PlugZap,
   Radio,
@@ -64,6 +65,11 @@ export function useSidebarData(): SidebarData {
             title: t('Usage'),
             url: '/dashboard/models',
             icon: LayoutDashboard,
+          },
+          {
+            title: t('Model Pricing'),
+            url: '/pricing',
+            icon: BadgeDollarSign,
           },
           {
             title: t('API Keys'),

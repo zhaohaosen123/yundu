@@ -2,10 +2,12 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
+import { PricingTable } from '../components/pricing-table'
 import {
   PricingToolbar,
   type PricingToolbarProps,
 } from '../components/pricing-toolbar'
+import type { PricingModel } from '../types'
 
 function toolbarProps(): PricingToolbarProps {
   return {
@@ -14,7 +16,7 @@ function toolbarProps(): PricingToolbarProps {
     sortBy: 'name',
     tokenUnit: 'M',
     showRechargePrice: false,
-    viewMode: 'card',
+    viewMode: 'table',
     quotaTypeFilter: 'all',
     endpointTypeFilter: 'all',
     vendorFilter: 'all',
@@ -41,6 +43,44 @@ function toolbarProps(): PricingToolbarProps {
 }
 
 describe('pricing controls', () => {
+  it('compares the base model price with every available group price', () => {
+    const model: PricingModel = {
+      id: 1,
+      model_name: 'comparison-model',
+      quota_type: 0,
+      model_ratio: 1,
+      completion_ratio: 1,
+      enable_groups: ['0.5x', '0.8x'],
+      billing_mode: 'tiered_expr',
+      billing_expr: 'tier("standard", p * 4 + c * 20)',
+    }
+
+    render(
+      <PricingTable
+        models={[model]}
+        groups={['0.5x', '0.8x']}
+        groupRatios={{ '0.5x': 0.5, '0.8x': 0.8 }}
+      />
+    )
+
+    expect(
+      screen.getByRole('columnheader', { name: 'Base Price' })
+    ).toBeVisible()
+    expect(
+      screen.getByRole('columnheader', { name: /0.5x/ })
+    ).toHaveTextContent('×0.5')
+    expect(
+      screen.getByRole('columnheader', { name: /0.8x/ })
+    ).toHaveTextContent('×0.8')
+    const cells = screen.getAllByRole('cell')
+    expect(cells[2]).toHaveTextContent('4')
+    expect(cells[2]).toHaveTextContent('20')
+    expect(cells[3]).toHaveTextContent('2')
+    expect(cells[3]).toHaveTextContent('10')
+    expect(cells[4]).toHaveTextContent('3.2')
+    expect(cells[4]).toHaveTextContent('16')
+  })
+
   it('changes the token unit and keeps the selected unit pressed when clicked again', async () => {
     const props = toolbarProps()
     const user = userEvent.setup()
