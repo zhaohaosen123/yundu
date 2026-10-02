@@ -1,12 +1,13 @@
 # Frontend Development - Backend runs from the mounted local source
 #
 # Usage:
-#   1. docker compose -f docker-compose.dev.yml up -d
-#   2. make dev-web
-#   3. Open http://localhost:5174 (Rsbuild dev server, API auto-proxied to :3000)
+#   1. Copy .env.local.example to .env.local and set the remote SQL_DSN.
+#   2. docker compose --env-file .env.local -f docker-compose.dev.yml up -d
+#   3. make dev-web
+#   4. Open http://localhost:5174 (Rsbuild dev server, API auto-proxied to :3000)
 #
 # Apply Go code changes without rebuilding an image:
-#   docker compose -f docker-compose.dev.yml restart new-api
+#   docker compose --env-file .env.local -f docker-compose.dev.yml restart new-api
 #
 # Stop:
 #   docker compose -f docker-compose.dev.yml down
@@ -33,12 +34,13 @@ services:
       - "3000:3000"
     volumes:
       - .:/app
-      - dev_data:/data
       - ./logs:/app/logs
       - dev_go_module_cache:/go/pkg/mod
       - dev_go_build_cache:/root/.cache/go-build
     environment:
-      - SQL_DSN=postgresql://root:123456@postgres:5432/new-api
+      - SQL_DSN=${SQL_DSN:?Set the remote SQL_DSN in .env.local}
+      - LOG_SQL_DSN=${LOG_SQL_DSN:-}
+      - SESSION_SECRET=${SESSION_SECRET:?Set SESSION_SECRET in .env.local}
       - REDIS_CONN_STRING=redis://redis
       - TZ=Asia/Shanghai
       - BATCH_UPDATE_ENABLED=true
@@ -50,8 +52,6 @@ services:
     depends_on:
       redis:
         condition: service_started
-      postgres:
-        condition: service_healthy
     networks:
       - dev-network
 
@@ -62,27 +62,7 @@ services:
     networks:
       - dev-network
 
-  postgres:
-    image: postgres:15-alpine
-    container_name: new-api-dev-pg
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: new-api
-    volumes:
-      - dev_pg_data:/var/lib/postgresql/data
-    networks:
-      - dev-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U root -d new-api"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
 volumes:
-  dev_data:
-  dev_pg_data:
   dev_go_module_cache:
   dev_go_build_cache:
 
