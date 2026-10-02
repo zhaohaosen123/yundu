@@ -37,7 +37,6 @@ import { useAuthStore } from '@/stores/auth-store'
 
 import { ModelsChartPreferences } from './components/models/models-chart-preferences'
 import { ModelsFilter } from './components/models/models-filter-dialog'
-import { OverviewDashboard } from './components/overview/overview-dashboard'
 import { DEFAULT_TIME_GRANULARITY } from './constants'
 import {
   buildDefaultDashboardFilters,
@@ -110,6 +109,18 @@ const LazyUserCharts = lazy(() =>
 const LazyFlowCharts = lazy(() =>
   import('./components/flow/flow-charts').then((m) => ({
     default: m.FlowCharts,
+  }))
+)
+
+const LazyAdminOverviewDashboard = lazy(() =>
+  import('./components/overview/admin-overview-dashboard').then((m) => ({
+    default: m.AdminOverviewDashboard,
+  }))
+)
+
+const LazyUserOverviewDashboard = lazy(() =>
+  import('./components/overview/overview-dashboard').then((m) => ({
+    default: m.UserOverviewDashboard,
   }))
 )
 
@@ -318,7 +329,24 @@ export function Dashboard() {
   const sectionActions = modelActions ?? flowActions
 
   if (activeSection === 'overview') {
-    return <OverviewDashboard />
+    return (
+      <Suspense
+        fallback={
+          <SectionPageLayout>
+            <SectionPageLayout.Title>{t('Overview')}</SectionPageLayout.Title>
+            <SectionPageLayout.Content>
+              <Skeleton className='h-72 w-full rounded-lg' />
+            </SectionPageLayout.Content>
+          </SectionPageLayout>
+        }
+      >
+        {isAdmin ? (
+          <LazyAdminOverviewDashboard />
+        ) : (
+          <LazyUserOverviewDashboard />
+        )}
+      </Suspense>
+    )
   }
 
   return (

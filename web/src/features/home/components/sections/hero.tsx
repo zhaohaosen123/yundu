@@ -43,6 +43,12 @@ export function Hero(props: HeroProps) {
     <section className='yundu-hero' aria-labelledby='yundu-hero-title'>
       <div className='yundu-hero-noise' aria-hidden='true' />
       <div className='yundu-hero-grid' aria-hidden='true' />
+      <div className='yundu-hero-atmosphere' aria-hidden='true'>
+        <span className='yundu-hero-horizon' />
+        <span className='yundu-hero-light yundu-hero-light-a' />
+        <span className='yundu-hero-light yundu-hero-light-b' />
+        <span className='yundu-hero-light yundu-hero-light-c' />
+      </div>
       <div className='yundu-hero-inner'>
         <div className='yundu-hero-copy'>
           <div className='yundu-kicker'>
@@ -98,6 +104,11 @@ export function Hero(props: HeroProps) {
           className='yundu-hero-visual'
           aria-label={t('Interactive model route preview')}
         >
+          <div className='yundu-orbit-particles' aria-hidden='true'>
+            {Array.from({ length: 12 }, (_, index) => (
+              <span key={index} />
+            ))}
+          </div>
           <div className='yundu-orbit-glow' aria-hidden='true' />
           <div className='yundu-orbit yundu-orbit-outer' aria-hidden='true' />
           <div className='yundu-orbit yundu-orbit-inner' aria-hidden='true' />

@@ -444,18 +444,12 @@ func RequestAmount(c *gin.Context) {
 func GetUserTopUps(c *gin.Context) {
 	userId := c.GetInt("id")
 	pageInfo := common.GetPageQuery(c)
-	keyword := c.Query("keyword")
-
-	var (
-		topups []*model.TopUp
-		total  int64
-		err    error
-	)
-	if keyword != "" {
-		topups, total, err = model.SearchUserTopUps(userId, keyword, pageInfo)
-	} else {
-		topups, total, err = model.GetUserTopUps(userId, pageInfo)
+	filters := model.TopUpFilters{
+		Keyword:       c.Query("keyword"),
+		Status:        c.Query("status"),
+		PaymentMethod: c.Query("payment_method"),
 	}
+	topups, total, err := model.ListTopUps(&userId, filters, pageInfo)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -469,18 +463,12 @@ func GetUserTopUps(c *gin.Context) {
 // GetAllTopUps 管理员获取全平台充值记录
 func GetAllTopUps(c *gin.Context) {
 	pageInfo := common.GetPageQuery(c)
-	keyword := c.Query("keyword")
-
-	var (
-		topups []*model.TopUp
-		total  int64
-		err    error
-	)
-	if keyword != "" {
-		topups, total, err = model.SearchAllTopUps(keyword, pageInfo)
-	} else {
-		topups, total, err = model.GetAllTopUps(pageInfo)
+	filters := model.TopUpFilters{
+		Keyword:       c.Query("keyword"),
+		Status:        c.Query("status"),
+		PaymentMethod: c.Query("payment_method"),
 	}
+	topups, total, err := model.ListTopUps(nil, filters, pageInfo)
 	if err != nil {
 		common.ApiError(c, err)
 		return

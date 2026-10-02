@@ -67,6 +67,7 @@ import {
   getPaymentMethodName,
   getStatusConfig,
 } from '../lib/billing'
+import { BillingHistoryFilters } from './billing-history-filters'
 
 export function AdminBillingPage() {
   const { t } = useTranslation()
@@ -76,11 +77,15 @@ export function AdminBillingPage() {
     page,
     pageSize,
     keyword,
+    status,
+    paymentMethod,
     loading,
     completing,
     handlePageChange,
     handlePageSizeChange,
     handleSearch,
+    handleStatusChange,
+    handlePaymentMethodChange,
     handleCompleteOrder,
     refresh,
   } = useBillingHistory({ initialPageSize: 20 })
@@ -116,8 +121,8 @@ export function AdminBillingPage() {
         <SectionPageLayout.Content>
           <div className='mx-auto flex w-full max-w-[1440px] flex-col gap-3'>
             <Card data-yundu-interactive>
-              <CardContent className='flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:p-4'>
-                <div className='relative min-w-0 flex-1'>
+              <CardContent className='flex flex-col gap-3 p-3 sm:p-4 md:flex-row md:flex-wrap md:items-center'>
+                <div className='relative min-w-0 flex-1 md:min-w-52'>
                   <Search
                     className='text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2'
                     aria-hidden='true'
@@ -129,6 +134,12 @@ export function AdminBillingPage() {
                     className='pl-9'
                   />
                 </div>
+                <BillingHistoryFilters
+                  status={status}
+                  paymentMethod={paymentMethod}
+                  onStatusChange={handleStatusChange}
+                  onPaymentMethodChange={handlePaymentMethodChange}
+                />
                 <div className='text-muted-foreground flex items-center gap-2 text-sm'>
                   <CircleDollarSign
                     className='text-primary size-4'
@@ -148,7 +159,7 @@ export function AdminBillingPage() {
                     value !== null && handlePageSizeChange(Number(value))
                   }
                 >
-                  <SelectTrigger className='w-full sm:w-32'>
+                  <SelectTrigger className='w-full md:w-32'>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent alignItemWithTrigger={false}>
@@ -179,7 +190,7 @@ export function AdminBillingPage() {
                     {t('No billing records found')}
                   </p>
                   <p className='text-xs'>
-                    {keyword
+                    {keyword || status || paymentMethod
                       ? t('Try adjusting your search')
                       : t('All account payments will appear here')}
                   </p>
@@ -224,7 +235,7 @@ export function AdminBillingPage() {
                               </TableCell>
                               <TableCell>
                                 <StatusBadge
-                                  label={status.label}
+                                  label={t(status.label)}
                                   variant={status.variant}
                                   showDot
                                   copyable={false}
@@ -271,7 +282,7 @@ export function AdminBillingPage() {
                               </div>
                             </div>
                             <StatusBadge
-                              label={status.label}
+                              label={t(status.label)}
                               variant={status.variant}
                               showDot
                               copyable={false}

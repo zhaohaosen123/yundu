@@ -14,6 +14,7 @@ import type {
   AffiliateCodeResponse,
   AffiliateTransferResponse,
   BillingHistoryResponse,
+  BillingHistoryFilters,
   CompleteOrderRequest,
   CreemPaymentRequest,
   CreemPaymentResponse,
@@ -181,22 +182,38 @@ export async function transferAffiliateQuota(
   return res.data
 }
 
+function billingHistoryParams(
+  page: number,
+  pageSize: number,
+  filters: BillingHistoryFilters
+): string {
+  const params = new URLSearchParams({
+    p: page.toString(),
+    page_size: pageSize.toString(),
+  })
+  if (filters.keyword) {
+    params.set('keyword', filters.keyword)
+  }
+  if (filters.status) {
+    params.set('status', filters.status)
+  }
+  if (filters.payment_method) {
+    params.set('payment_method', filters.payment_method)
+  }
+  return params.toString()
+}
+
 /**
  * Get billing history for current user
  */
 export async function getUserBillingHistory(
   page: number,
   pageSize: number,
-  keyword?: string
+  filters: BillingHistoryFilters = {}
 ): Promise<ApiResponse<BillingHistoryResponse>> {
-  const params = new URLSearchParams({
-    p: page.toString(),
-    page_size: pageSize.toString(),
-  })
-  if (keyword) {
-    params.append('keyword', keyword)
-  }
-  const res = await api.get(`/api/user/topup/self?${params.toString()}`)
+  const res = await api.get(
+    `/api/user/topup/self?${billingHistoryParams(page, pageSize, filters)}`
+  )
   return res.data
 }
 
@@ -206,16 +223,11 @@ export async function getUserBillingHistory(
 export async function getAllBillingHistory(
   page: number,
   pageSize: number,
-  keyword?: string
+  filters: BillingHistoryFilters = {}
 ): Promise<ApiResponse<BillingHistoryResponse>> {
-  const params = new URLSearchParams({
-    p: page.toString(),
-    page_size: pageSize.toString(),
-  })
-  if (keyword) {
-    params.append('keyword', keyword)
-  }
-  const res = await api.get(`/api/user/topup?${params.toString()}`)
+  const res = await api.get(
+    `/api/user/topup?${billingHistoryParams(page, pageSize, filters)}`
+  )
   return res.data
 }
 

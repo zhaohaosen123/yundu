@@ -233,7 +233,13 @@ export interface UserWalletData {
 /**
  * Topup record status
  */
-export type TopupStatus = 'success' | 'pending' | 'expired'
+export type TopupStatus = 'success' | 'pending' | 'failed' | 'expired'
+
+export interface BillingHistoryFilters {
+  keyword?: string
+  status?: TopupStatus | ''
+  payment_method?: string
+}
 
 /**
  * Topup billing record

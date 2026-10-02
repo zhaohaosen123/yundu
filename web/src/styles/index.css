@@ -185,6 +185,41 @@ For commercial licensing, please contact support@quantumnous.com
     );
     box-shadow: 0 10px 26px -20px
       color-mix(in oklch, var(--foreground) 28%, transparent);
+    transition:
+      transform 360ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 360ms ease,
+      border-color 360ms ease;
+  }
+
+  [data-yundu-interactive]:hover,
+  [data-yundu-interactive]:focus-within {
+    z-index: 1;
+    border-color: color-mix(in oklch, var(--primary) 50%, var(--border));
+    box-shadow:
+      0 22px 46px -30px color-mix(in oklch, var(--primary) 48%, transparent),
+      0 0 0 1px color-mix(in oklch, var(--primary) 18%, transparent);
+    transform: translateY(-6px) scale(1.012);
+  }
+
+  [data-yundu-interactive]::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    content: '';
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(
+      ellipse 85% 75% at 95% 0,
+      color-mix(in oklch, var(--primary) 12%, transparent),
+      transparent 70%
+    );
+    transition: opacity 360ms ease;
+  }
+
+  [data-yundu-interactive]:hover::before,
+  [data-yundu-interactive]:focus-within::before {
+    opacity: 1;
   }
 
   [data-slot='card']::after {
@@ -223,7 +258,7 @@ For commercial licensing, please contact support@quantumnous.com
   }
 
   [data-slot='sidebar-menu-button']:hover {
-    transform: translateX(2px);
+    transform: translateX(5px);
   }
 
   [data-slot='sidebar-menu-button'][data-active]::before {
@@ -249,7 +284,12 @@ For commercial licensing, please contact support@quantumnous.com
   }
 
   [data-slot='button']:not(:disabled):hover {
-    box-shadow: 0 6px 18px color-mix(in oklch, var(--primary) 14%, transparent);
+    box-shadow: 0 9px 24px color-mix(in oklch, var(--primary) 22%, transparent);
+    transform: translateY(-2px);
+  }
+
+  [data-slot='button']:not(:disabled):active {
+    transform: translateY(0) scale(0.97);
   }
 
   [data-slot='input']:focus-visible,
@@ -261,7 +301,20 @@ For commercial licensing, please contact support@quantumnous.com
   }
 
   [data-slot='table'] tbody tr:hover {
-    box-shadow: inset 2px 0 0 var(--primary);
+    box-shadow:
+      inset 3px 0 0 var(--primary),
+      0 4px 18px -14px var(--primary);
+    background-color: color-mix(in oklch, var(--primary) 7%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (pointer: coarse) {
+  [data-yundu-interactive]:hover,
+  [data-yundu-interactive]:focus-within,
+  [data-slot='button']:not(:disabled):hover,
+  [data-slot='button']:not(:disabled):active,
+  [data-slot='sidebar-menu-button']:hover {
+    transform: none;
   }
 }
 
@@ -670,19 +723,19 @@ For commercial licensing, please contact support@quantumnous.com
 }
 
 .landing-animate-fade-up {
-  animation: landing-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: landing-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 .landing-animate-fade-in {
-  animation: landing-fade-in 0.6s ease-out both;
+  animation: landing-fade-in 0.6s ease-out backwards;
 }
 .landing-animate-scale-in {
-  animation: landing-scale-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: landing-scale-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 .landing-animate-fade-left {
-  animation: landing-fade-left 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: landing-fade-left 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 .landing-animate-fade-right {
-  animation: landing-fade-right 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: landing-fade-right 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {

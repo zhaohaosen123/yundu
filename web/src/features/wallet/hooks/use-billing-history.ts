@@ -12,7 +12,7 @@ import {
   completeOrder,
   isApiSuccess,
 } from '../api'
-import type { TopupRecord } from '../types'
+import type { TopupRecord, TopupStatus } from '../types'
 
 // ============================================================================
 // Billing History Hook
@@ -34,6 +34,8 @@ export function useBillingHistory(options: UseBillingHistoryOptions = {}) {
   const [page, setPage] = useState(initialPage)
   const [pageSize, setPageSize] = useState(initialPageSize)
   const [keyword, setKeyword] = useState('')
+  const [status, setStatus] = useState<TopupStatus | ''>('')
+  const [paymentMethod, setPaymentMethod] = useState('')
   const debouncedKeyword = useDebounce(keyword)
   const requestIdRef = useRef(0)
   const [loading, setLoading] = useState(false)
@@ -47,8 +49,16 @@ export function useBillingHistory(options: UseBillingHistoryOptions = {}) {
     setLoading(true)
     try {
       const response = isAdmin
-        ? await getAllBillingHistory(page, pageSize, debouncedKeyword)
-        : await getUserBillingHistory(page, pageSize, debouncedKeyword)
+        ? await getAllBillingHistory(page, pageSize, {
+            keyword: debouncedKeyword,
+            status,
+            payment_method: paymentMethod,
+          })
+        : await getUserBillingHistory(page, pageSize, {
+            keyword: debouncedKeyword,
+            status,
+            payment_method: paymentMethod,
+          })
 
       if (requestId !== requestIdRef.current) return
 
@@ -70,7 +80,7 @@ export function useBillingHistory(options: UseBillingHistoryOptions = {}) {
         setLoading(false)
       }
     }
-  }, [debouncedKeyword, isAdmin, page, pageSize])
+  }, [debouncedKeyword, isAdmin, page, pageSize, paymentMethod, status])
 
   /**
    * Complete a pending order (admin only)
@@ -128,6 +138,18 @@ export function useBillingHistory(options: UseBillingHistoryOptions = {}) {
     setPage(1) // Reset to first page when searching
   }, [])
 
+  const handleStatusChange = useCallback((newStatus: TopupStatus | '') => {
+    requestIdRef.current += 1
+    setStatus(newStatus)
+    setPage(1)
+  }, [])
+
+  const handlePaymentMethodChange = useCallback((newMethod: string) => {
+    requestIdRef.current += 1
+    setPaymentMethod(newMethod)
+    setPage(1)
+  }, [])
+
   // Fetch data after the search draft has settled.
   useEffect(() => {
     if (keyword !== debouncedKeyword) return
@@ -141,12 +163,16 @@ export function useBillingHistory(options: UseBillingHistoryOptions = {}) {
     page,
     pageSize,
     keyword,
+    status,
+    paymentMethod,
     loading,
     completing,
     isAdmin,
     handlePageChange,
     handlePageSizeChange,
     handleSearch,
+    handleStatusChange,
+    handlePaymentMethodChange,
     handleCompleteOrder,
     refresh: fetchBillingHistory,
   }

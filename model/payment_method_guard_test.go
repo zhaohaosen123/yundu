@@ -21,6 +21,39 @@ func insertUserForPaymentGuardTest(t *testing.T, id int, quota int) *User {
 	return user
 }
 
+func TestListTopUpsCombinesFiltersBeforePagination(t *testing.T) {
+	truncateTables(t)
+	now := time.Now().Unix()
+	orders := []TopUp{
+		{UserId: 601, TradeNo: "filter-one", PaymentMethod: "alipay", Status: common.TopUpStatusSuccess, CreateTime: now},
+		{UserId: 601, TradeNo: "filter-two", PaymentMethod: "wxpay", Status: common.TopUpStatusPending, CreateTime: now},
+		{UserId: 602, TradeNo: "filter-three", PaymentMethod: "wxpay", Status: common.TopUpStatusSuccess, CreateTime: now},
+		{UserId: 602, TradeNo: "filter-four", PaymentMethod: "alipay", Status: common.TopUpStatusFailed, CreateTime: now},
+	}
+	for index := range orders {
+		require.NoError(t, DB.Create(&orders[index]).Error)
+	}
+
+	page := &common.PageInfo{Page: 1, PageSize: 1}
+	items, total, err := ListTopUps(nil, TopUpFilters{Status: common.TopUpStatusSuccess, PaymentMethod: "wxpay"}, page)
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	require.Len(t, items, 1)
+	assert.Equal(t, "filter-three", items[0].TradeNo)
+
+	userID := 601
+	items, total, err = ListTopUps(&userID, TopUpFilters{Keyword: "filter-two", Status: common.TopUpStatusPending, PaymentMethod: "wxpay"}, page)
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	require.Len(t, items, 1)
+	assert.Equal(t, "filter-two", items[0].TradeNo)
+
+	items, total, err = ListTopUps(&userID, TopUpFilters{Status: common.TopUpStatusSuccess, PaymentMethod: "wxpay"}, page)
+	require.NoError(t, err)
+	assert.Zero(t, total)
+	assert.Empty(t, items)
+}
+
 func insertSubscriptionPlanForPaymentGuardTest(t *testing.T, id int) *SubscriptionPlan {
 	t.Helper()
 	plan := &SubscriptionPlan{

@@ -99,6 +99,53 @@ For commercial licensing, please contact support@quantumnous.com
     linear-gradient(90deg, var(--yundu-line) 1px, transparent 1px);
   background-size: 74px 74px;
   mask-image: linear-gradient(90deg, transparent 10%, black 65%);
+  animation: yundu-grid-drift 28s linear infinite alternate;
+}
+.yundu-hero-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.yundu-hero-horizon {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 65% 48% at 78% 47%,
+    rgb(85 232 192 / 16%),
+    transparent 72%
+  );
+  transform-origin: 75% 50%;
+  animation: yundu-horizon 11s ease-in-out infinite alternate;
+}
+.yundu-hero-light {
+  position: absolute;
+  top: 17%;
+  left: -35%;
+  width: 76%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(115 236 209 / 8%) 25%,
+    rgb(146 255 226 / 52%) 65%,
+    transparent
+  );
+  box-shadow: 0 0 16px rgb(103 231 190 / 40%);
+  transform: rotate(-20deg);
+  opacity: 0;
+  animation: yundu-light-cross 12s linear infinite;
+}
+.yundu-hero-light-b {
+  top: 57%;
+  animation-delay: -4s;
+  animation-duration: 16s;
+}
+.yundu-hero-light-c {
+  top: 88%;
+  animation-delay: -9s;
+  animation-duration: 14s;
 }
 
 .yundu-hero-noise {
@@ -222,6 +269,74 @@ For commercial licensing, please contact support@quantumnous.com
   position: relative;
   height: 560px;
   min-width: 0;
+  transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.yundu-hero-visual:hover {
+  transform: scale(1.035);
+}
+.yundu-orbit-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.yundu-orbit-particles span {
+  position: absolute;
+  top: 30%;
+  left: calc(5% + var(--particle-index) * 7%);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #aaf5dc;
+  box-shadow: 0 0 12px 2px rgb(128 232 200 / 48%);
+  animation: yundu-particle-rise calc(4s + var(--particle-index) * 0.55s)
+    ease-in-out infinite alternate;
+  animation-delay: calc(var(--particle-index) * -0.8s);
+}
+.yundu-orbit-particles span:nth-child(1) {
+  --particle-index: 1;
+}
+.yundu-orbit-particles span:nth-child(2) {
+  --particle-index: 2;
+}
+.yundu-orbit-particles span:nth-child(3) {
+  --particle-index: 3;
+}
+.yundu-orbit-particles span:nth-child(4) {
+  --particle-index: 4;
+}
+.yundu-orbit-particles span:nth-child(5) {
+  --particle-index: 5;
+}
+.yundu-orbit-particles span:nth-child(6) {
+  --particle-index: 6;
+}
+.yundu-orbit-particles span:nth-child(7) {
+  --particle-index: 7;
+}
+.yundu-orbit-particles span:nth-child(8) {
+  --particle-index: 8;
+}
+.yundu-orbit-particles span:nth-child(9) {
+  --particle-index: 9;
+}
+.yundu-orbit-particles span:nth-child(10) {
+  --particle-index: 10;
+}
+.yundu-orbit-particles span:nth-child(11) {
+  --particle-index: 11;
+}
+.yundu-orbit-particles span:nth-child(12) {
+  --particle-index: 12;
+}
+.yundu-orbit-particles span:nth-child(3n) {
+  top: 62%;
+}
+.yundu-orbit-particles span:nth-child(4n) {
+  top: 15%;
+}
+.yundu-orbit-particles span:nth-child(5n) {
+  top: 78%;
 }
 .yundu-orbit-glow {
   position: absolute;
@@ -251,6 +366,7 @@ For commercial licensing, please contact support@quantumnous.com
   box-shadow:
     inset 0 0 60px rgb(80 213 181 / 4%),
     0 0 70px rgb(80 213 181 / 4%);
+  animation: yundu-spin-reverse 38s linear infinite;
 }
 .yundu-orbit-inner::before,
 .yundu-orbit-inner::after {
@@ -301,6 +417,7 @@ For commercial licensing, please contact support@quantumnous.com
     0 0 55px rgb(52 218 171 / 18%),
     inset 0 0 35px rgb(52 218 171 / 7%);
   transform: translate(-50%, -50%);
+  animation: yundu-core-pulse 5s ease-in-out infinite;
 }
 .yundu-orbit-core strong {
   margin-top: 5px;
@@ -336,11 +453,12 @@ For commercial licensing, please contact support@quantumnous.com
     border-color 0.25s ease !important;
 }
 .yundu-orbit-node:hover,
+.yundu-orbit-node:focus-visible,
 .yundu-orbit-node.is-active {
   border-color: var(--yundu-mint) !important;
   color: white !important;
   box-shadow: 0 0 25px rgb(128 232 200 / 25%);
-  transform: scale(1.09);
+  transform: scale(1.18) translateY(-4px);
 }
 .yundu-orbit-node-0 {
   top: calc(43% - 18px);
@@ -538,7 +656,7 @@ For commercial licensing, please contact support@quantumnous.com
   box-shadow:
     0 15px 40px rgb(0 0 0 / 20%),
     inset 0 1px 0 rgb(128 232 200 / 20%);
-  transform: translateY(-6px);
+  transform: translateY(-12px) scale(1.025);
 }
 .yundu-capability::before {
   position: absolute;
@@ -580,7 +698,7 @@ For commercial licensing, please contact support@quantumnous.com
   transition: transform 0.35s;
 }
 .yundu-capability:hover .yundu-capability-icon {
-  transform: rotate(-8deg) scale(1.08);
+  transform: rotate(-13deg) scale(1.28);
 }
 .yundu-capability h3 {
   margin-top: 20px;
@@ -623,10 +741,15 @@ For commercial licensing, please contact support@quantumnous.com
   padding: 28px;
   border-top: 1px solid rgb(128 232 200 / 48%);
   background: linear-gradient(180deg, rgb(128 232 200 / 5%), transparent 80%);
-  transition: background 0.3s;
+  transition:
+    background 0.3s,
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s;
 }
 .yundu-journey-step:hover {
   background: linear-gradient(180deg, rgb(128 232 200 / 12%), transparent 90%);
+  transform: translateY(-10px);
+  box-shadow: 0 18px 34px -22px rgb(79 231 187 / 38%);
 }
 .yundu-journey-top {
   display: flex;
@@ -706,6 +829,53 @@ For commercial licensing, please contact support@quantumnous.com
     transform: translate(-50%, -50%) rotate(360deg);
   }
 }
+@keyframes yundu-spin-reverse {
+  to {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+@keyframes yundu-grid-drift {
+  to {
+    transform: translate3d(28px, -24px, 0);
+  }
+}
+@keyframes yundu-horizon {
+  to {
+    opacity: 0.45;
+    transform: scale(1.28) translateX(-3%);
+  }
+}
+@keyframes yundu-light-cross {
+  8% {
+    opacity: 0;
+  }
+  24% {
+    opacity: 0.9;
+  }
+  48%,
+  100% {
+    opacity: 0;
+    transform: translate3d(170vw, -28vh, 0) rotate(-20deg);
+  }
+}
+@keyframes yundu-particle-rise {
+  from {
+    opacity: 0.12;
+    transform: translate3d(-10px, 16px, 0) scale(0.5);
+  }
+  to {
+    opacity: 0.9;
+    transform: translate3d(18px, -22px, 0) scale(1.3);
+  }
+}
+@keyframes yundu-core-pulse {
+  50% {
+    box-shadow:
+      0 0 0 22px rgb(128 232 200 / 3%),
+      0 0 85px rgb(52 218 171 / 34%),
+      inset 0 0 42px rgb(52 218 171 / 13%);
+  }
+}
 @keyframes yundu-travel {
   from {
     transform: translateX(-100%);
@@ -738,6 +908,10 @@ For commercial licensing, please contact support@quantumnous.com
 }
 
 @media (max-width: 640px) {
+  .yundu-hero-light-c,
+  .yundu-orbit-particles span:nth-child(n + 7) {
+    display: none;
+  }
   .yundu-hero-inner {
     min-height: 0;
     padding: 116px 22px 54px;
@@ -828,6 +1002,14 @@ For commercial licensing, please contact support@quantumnous.com
   }
   .yundu-final-cta-inner {
     padding: 80px 22px;
+  }
+}
+
+@media (pointer: coarse) {
+  .yundu-hero-visual:hover,
+  .yundu-capability:hover,
+  .yundu-journey-step:hover {
+    transform: none;
   }
 }
 

@@ -35,7 +35,7 @@ import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
-import { OverviewDashboard } from '../overview-dashboard'
+import { UserOverviewDashboard } from '../overview-dashboard'
 
 let client: QueryClient
 let usageError: Error | null
@@ -144,7 +144,7 @@ afterEach(() => {
 
 async function renderOverview() {
   const router = createRouter({
-    routeTree: createRootRoute({ component: OverviewDashboard }),
+    routeTree: createRootRoute({ component: UserOverviewDashboard }),
     history: createMemoryHistory({ initialEntries: ['/'] }),
   })
   await router.load()

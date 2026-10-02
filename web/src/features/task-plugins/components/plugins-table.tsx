@@ -151,7 +151,10 @@ export function PluginsTable(props: PluginsTableProps) {
       },
       {
         id: 'source',
+        accessorFn: (row) => row.source,
         header: t('Source'),
+        filterFn: (row, id, value: string[]) =>
+          value.includes(String(row.getValue(id))),
         cell: ({ row }) => {
           if (row.original.source === 'factory') {
             return <Badge variant='secondary'>{t('Factory')}</Badge>
@@ -184,7 +187,14 @@ export function PluginsTable(props: PluginsTableProps) {
       },
       {
         id: 'channelType',
+        accessorFn: (row) => row.meta.channelTypes?.[0] ?? 'plugin',
         header: t('Channel type'),
+        filterFn: (row, _id, value: string[]) => {
+          const types = row.original.meta.channelTypes ?? []
+          return types.length === 0
+            ? value.includes('plugin')
+            : types.some((type) => value.includes(String(type)))
+        },
         cell: ({ row }) => {
           const channelTypes = row.original.meta.channelTypes ?? []
           if (channelTypes.length === 0) {
@@ -207,7 +217,10 @@ export function PluginsTable(props: PluginsTableProps) {
       },
       {
         id: 'enabled',
+        accessorFn: (row) => String(row.enabled),
         header: t('Enabled'),
+        filterFn: (row, id, value: string[]) =>
+          value.includes(String(row.getValue(id))),
         cell: ({ row }) => (
           <Switch
             aria-label={t('Enable plugin {{key}}', {
@@ -226,7 +239,10 @@ export function PluginsTable(props: PluginsTableProps) {
       },
       {
         id: 'runtime',
+        accessorFn: (row) => row.runtime_status,
         header: t('Runtime status'),
+        filterFn: (row, id, value: string[]) =>
+          value.includes(String(row.getValue(id))),
         cell: ({ row }) => {
           const status = row.original.runtime_status
           if (status === 'registered') {
@@ -297,6 +313,26 @@ export function PluginsTable(props: PluginsTableProps) {
   )
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState('')
+  const channelTypeOptions = useMemo(() => {
+    const types = new Set<number>()
+    let hasPluginOnly = false
+    for (const plugin of pluginsQuery.data ?? []) {
+      const channelTypes = plugin.meta.channelTypes ?? []
+      if (channelTypes.length === 0) {
+        hasPluginOnly = true
+      }
+      for (const type of channelTypes) types.add(type)
+    }
+    return [
+      ...(hasPluginOnly ? [{ value: 'plugin', label: t('Task Plugin') }] : []),
+      ...[...types]
+        .sort((a, b) => a - b)
+        .map((type) => ({
+          value: String(type),
+          label: t(getChannelTypeLabel(type)),
+        })),
+    ]
+  }, [pluginsQuery.data, t])
   const { table } = useDataTable({
     data: pluginsQuery.data ?? [],
     columns,
@@ -349,7 +385,54 @@ export function PluginsTable(props: PluginsTableProps) {
         viewModeStorageKey={VIEW_MODE_STORAGE_KEY}
         renderCard={(row) => <PluginCard row={row} />}
         cardGridClassName='grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3'
-        toolbarProps={{ searchPlaceholder: t('Filter plugins...') }}
+        toolbarProps={{
+          searchPlaceholder: t('Filter plugins...'),
+          filters: [
+            {
+              columnId: 'source',
+              title: t('Source'),
+              options: [
+                { value: 'factory', label: t('Factory') },
+                { value: 'override', label: t('Third-party') },
+                {
+                  value: 'override_over_factory',
+                  label: t('Custom'),
+                },
+              ],
+              singleSelect: true,
+            },
+            {
+              columnId: 'channelType',
+              title: t('Channel type'),
+              options: channelTypeOptions,
+              singleSelect: true,
+            },
+            {
+              columnId: 'enabled',
+              title: t('Status'),
+              options: [
+                { value: 'true', label: t('Enabled') },
+                { value: 'false', label: t('Disabled') },
+              ],
+              singleSelect: true,
+            },
+            {
+              columnId: 'runtime',
+              title: t('Runtime status'),
+              options: [
+                { value: 'registered', label: t('Registered') },
+                { value: 'compile_failed', label: t('Compilation failed') },
+                { value: 'disabled', label: t('Disabled') },
+                {
+                  value: 'disabled_fallback',
+                  label: t('Disabled; fell back to factory'),
+                },
+                { value: 'not_registered', label: t('Not registered') },
+              ],
+              singleSelect: true,
+            },
+          ],
+        }}
       />
       <ConfirmDialog
         open={Boolean(statusConfirmation)}

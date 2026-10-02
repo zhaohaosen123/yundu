@@ -34,7 +34,7 @@ import {
   WalletCards,
   type LucideIcon,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { SectionPageLayout } from '@/components/layout'
@@ -63,7 +63,12 @@ import { cn } from '@/lib/utils'
 import { getAdminOverview } from '../../api'
 import { DASHBOARD_REFRESH_INTERVAL_MS } from '../../constants'
 import type { AdminOverviewData, AdminOverviewSummary } from '../../types'
-import { AdminOverviewCharts } from './admin-overview-charts'
+
+const LazyAdminOverviewCharts = lazy(() =>
+  import('./admin-overview-charts').then((module) => ({
+    default: module.AdminOverviewCharts,
+  }))
+)
 
 const ADMIN_OVERVIEW_PERIODS = [7, 14, 30] as const
 type AdminOverviewPeriod = (typeof ADMIN_OVERVIEW_PERIODS)[number]
@@ -235,7 +240,12 @@ function AdminOverviewContent({ data }: { data: AdminOverviewData }) {
         ))}
       </section>
 
-      <AdminOverviewCharts trend={data.trend} periodDays={data.period_days} />
+      <Suspense fallback={<Skeleton className='h-80 w-full rounded-lg' />}>
+        <LazyAdminOverviewCharts
+          trend={data.trend}
+          periodDays={data.period_days}
+        />
+      </Suspense>
 
       <section className='grid gap-4 xl:grid-cols-2'>
         <Card data-yundu-interactive className='min-w-0 overflow-hidden'>
