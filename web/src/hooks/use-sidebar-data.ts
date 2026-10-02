@@ -22,12 +22,10 @@ import {
   ClipboardList,
   CreditCard,
   FileText,
-  FlaskConical,
   Key,
   LayoutDashboard,
   ListTodo,
   BadgeDollarSign,
-  MessageSquare,
   Network,
   PlugZap,
   Radio,
@@ -175,22 +173,6 @@ export function useSidebarData(): SidebarData {
   return {
     navGroups: [
       {
-        id: 'chat',
-        title: t('Chat'),
-        items: [
-          {
-            title: t('Playground'),
-            url: '/playground',
-            icon: FlaskConical,
-          },
-          {
-            title: t('Chat'),
-            icon: MessageSquare,
-            type: 'chat-presets',
-          },
-        ],
-      },
-      {
         id: 'general',
         title: t('General'),
         items: [
@@ -206,7 +188,7 @@ export function useSidebarData(): SidebarData {
           },
           {
             title: t('Model Pricing'),
-            url: '/pricing',
+            url: '/model-pricing',
             icon: BadgeDollarSign,
           },
           {

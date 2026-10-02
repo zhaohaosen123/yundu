@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { describe, test } from 'vitest'
 
 import { resolveTaskDetailAccess } from '../lib/task-details'
+import { buildBaseParams } from '../lib/utils'
 import type { TaskLog } from '../types'
 
 const task: TaskLog = {
@@ -57,5 +58,38 @@ describe('task detail access', () => {
       upstreamTaskId: 'upstream-private',
       nodeName: 'node-a',
     })
+  })
+})
+
+describe('task history query', () => {
+  test('loads all historical tasks when no date range is selected', () => {
+    assert.deepEqual(
+      buildBaseParams({ page: 1, pageSize: 20, searchParams: {} }),
+      {
+        p: 1,
+        page_size: 20,
+        start_timestamp: undefined,
+        end_timestamp: undefined,
+      }
+    )
+  })
+
+  test('applies an explicit date range to task queries', () => {
+    assert.deepEqual(
+      buildBaseParams({
+        page: 2,
+        pageSize: 20,
+        searchParams: {
+          startTime: 1_700_000_000_000,
+          endTime: 1_700_086_400_000,
+        },
+      }),
+      {
+        p: 2,
+        page_size: 20,
+        start_timestamp: 1_700_000_000,
+        end_timestamp: 1_700_086_400,
+      }
+    )
   })
 })

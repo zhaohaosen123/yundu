@@ -104,7 +104,7 @@ afterEach(() => {
   }
 })
 
-it('loads personal groups and filters choices without submitting until Search', async () => {
+it('loads personal groups and applies the selected group automatically', async () => {
   const router = await renderFilter()
   const input = screen.getByRole('combobox', { name: 'Group' })
   await userEvent.click(input)
@@ -115,8 +115,6 @@ it('loads personal groups and filters choices without submitting until Search', 
   ).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole('option', { name: 'premium' }))
   expect(input).toHaveValue('premium')
-  expect(router.state.location.search).not.toHaveProperty('group')
-  await userEvent.click(screen.getByRole('button', { name: 'Search' }))
   await waitFor(() =>
     expect(router.state.location.search).toMatchObject({
       group: 'premium',
@@ -136,7 +134,7 @@ it('loads all groups in the administrator view', async () => {
   expect(api.get).not.toHaveBeenCalledWith('/api/user/self/groups')
 })
 
-it('confirms a keyboard choice before Enter submits the selected group', async () => {
+it('confirms a keyboard choice and applies the selected group automatically', async () => {
   const router = await renderFilter()
   const input = screen.getByRole('combobox', { name: 'Group' })
   await userEvent.click(input)
@@ -144,8 +142,6 @@ it('confirms a keyboard choice before Enter submits the selected group', async (
   await userEvent.keyboard('{ArrowDown}{Enter}')
   expect(input).toHaveValue('default')
   expect(input).toHaveAttribute('aria-expanded', 'false')
-  expect(router.state.location.search).not.toHaveProperty('group')
-  await userEvent.keyboard('{Enter}')
   await waitFor(() =>
     expect(router.state.location.search).toMatchObject({ group: 'default' })
   )
@@ -162,14 +158,12 @@ it.each([{}, null])(
     expect(input).toHaveValue('retired')
     await userEvent.clear(input)
     await userEvent.type(input, 'historical')
-    await userEvent.click(screen.getByRole('button', { name: 'Search' }))
     await waitFor(() =>
       expect(router.state.location.search).toMatchObject({
         group: 'historical',
       })
     )
     await userEvent.clear(input)
-    await userEvent.click(screen.getByRole('button', { name: 'Search' }))
     await waitFor(() =>
       expect(router.state.location.search).not.toHaveProperty('group')
     )
@@ -216,7 +210,7 @@ it('keeps the compact input and masks the dropdown together with other sensitive
   expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
 })
 
-it('lets mobile users select a long group name inside the filter drawer and submit it', async () => {
+it('lets mobile users select a long group name inside the filter drawer', async () => {
   Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', {
     configurable: true,
     value: vi.fn(),
@@ -238,10 +232,10 @@ it('lets mobile users select a long group name inside the filter drawer and subm
   await userEvent.click(option)
   expect(input).toHaveValue(longGroup)
   expect(dialog).toBeVisible()
-  await userEvent.click(within(dialog).getByRole('button', { name: 'Search' }))
   await waitFor(() =>
     expect(router.state.location.search).toMatchObject({ group: longGroup })
   )
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Close' }))
   await waitFor(() =>
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   )
@@ -262,7 +256,6 @@ it.each([1, 10])(
       screen.queryByRole('option', { name: 'auto' })
     ).not.toBeInTheDocument()
     await userEvent.click(option)
-    await userEvent.click(screen.getByRole('button', { name: 'Search' }))
     await waitFor(() =>
       expect(router.state.location.search).toMatchObject({ group: 'auto-team' })
     )
@@ -279,7 +272,6 @@ it('keeps historical auto values editable when auto is the only available group'
   expect(screen.queryByRole('option', { name: 'auto' })).not.toBeInTheDocument()
   await userEvent.clear(input)
   await userEvent.type(input, 'retired')
-  await userEvent.click(screen.getByRole('button', { name: 'Search' }))
   await waitFor(() =>
     expect(router.state.location.search).toMatchObject({ group: 'retired' })
   )

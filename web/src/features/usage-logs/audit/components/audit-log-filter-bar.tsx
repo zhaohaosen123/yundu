@@ -42,7 +42,6 @@ export function AuditLogFilterBar(props: {
   currentTokenRef?: string
   onTokenScopeChange: (value: string) => void
   isFetching: boolean
-  onSearch: () => void
   onReset: () => void
 }) {
   const { t } = useTranslation()
@@ -202,7 +201,7 @@ export function AuditLogFilterBar(props: {
       hasActiveFilters={hasFilters}
       hasAdvancedActiveFilters={advancedCount > 0}
       searchLoading={props.isFetching}
-      onSearch={props.onSearch}
+      autoApply
       onReset={props.onReset}
     />
   )

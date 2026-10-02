@@ -1,8 +1,8 @@
-import { useQueryClient, useIsFetching, useQuery } from '@tanstack/react-query'
+import { useIsFetching, useQuery } from '@tanstack/react-query'
 import { useNavigate, getRouteApi } from '@tanstack/react-router'
 import type { Table } from '@tanstack/react-table'
 import { Eye, EyeOff } from 'lucide-react'
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
@@ -22,7 +22,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { getGroups } from '@/features/users/api'
-import { useMediaQuery } from '@/hooks'
+import { useDebounce } from '@/hooks/use-debounce'
 import { getUserGroups } from '@/lib/api'
 import { requireServerSuccess } from '@/lib/server-error-message'
 
@@ -101,9 +101,7 @@ export function CommonLogsFilterBar<TData>(
   props: CommonLogsFilterBarProps<TData>
 ) {
   const { t } = useTranslation()
-  const isMobile = useMediaQuery('(max-width: 640px)')
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const searchParams = route.useSearch()
   const { isAdminView: isAdmin } = useLogsViewScope()
   const { sensitiveVisible, setSensitiveVisible } = useUsageLogsContext()
@@ -176,6 +174,27 @@ export function CommonLogsFilterBar<TData>(
     draft.sourceKey === searchState.sourceKey ? draft : searchState
   const filters = activeDraft.filters
   const logType = activeDraft.logType
+  const debouncedDraft = useDebounce(activeDraft, 300)
+
+  useEffect(() => {
+    if (debouncedDraft.sourceKey !== searchState.sourceKey) return
+    const desired = {
+      ...buildSearchParams(debouncedDraft.filters, 'common'),
+      type: [debouncedDraft.logType],
+    }
+    const current = {
+      ...buildSearchParams(searchState.filters, 'common'),
+      type: [searchState.logType],
+    }
+    if (JSON.stringify(desired) === JSON.stringify(current)) return
+
+    void navigate({
+      to: '/usage-logs/$section',
+      params: { section: 'common' },
+      search: { ...desired, page: 1 },
+      replace: true,
+    })
+  }, [debouncedDraft, navigate, searchState])
 
   const handleChange = useCallback(
     (field: keyof CommonLogFilters, value: Date | string | undefined) => {
@@ -192,24 +211,6 @@ export function CommonLogsFilterBar<TData>(
     [searchState]
   )
 
-  const handleApply = useCallback(
-    (nextFilters: CommonLogFilters = filters) => {
-      const filterParams = buildSearchParams(nextFilters, 'common')
-      navigate({
-        to: '/usage-logs/$section',
-        params: { section: 'common' },
-        search: {
-          ...filterParams,
-          type: [logType],
-          page: 1,
-        },
-      })
-      queryClient.invalidateQueries({ queryKey: ['logs'] })
-      queryClient.invalidateQueries({ queryKey: ['usage-logs-stats'] })
-    },
-    [filters, logType, navigate, queryClient]
-  )
-
   const handleReset = useCallback(() => {
     const { start, end } = getDefaultTimeRange()
     const resetFilters: CommonLogFilters = { startTime: start, endTime: end }
@@ -224,24 +225,16 @@ export function CommonLogsFilterBar<TData>(
       logType: LOG_TYPE_ALL_VALUE,
     })
 
-    navigate({
+    void navigate({
       to: '/usage-logs/$section',
       params: { section: 'common' },
       search: {
         page: 1,
         ...resetSearch,
       },
+      replace: true,
     })
-    queryClient.invalidateQueries({ queryKey: ['logs'] })
-    queryClient.invalidateQueries({ queryKey: ['usage-logs-stats'] })
-  }, [navigate, queryClient])
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') handleApply()
-    },
-    [handleApply]
-  )
+  }, [navigate])
 
   const hasExpandedFilters =
     !!filters.token ||
@@ -308,9 +301,6 @@ export function CommonLogsFilterBar<TData>(
         onChange={({ start, end }) => {
           handleChange('startTime', start)
           handleChange('endTime', end)
-          if (isMobile) {
-            handleApply({ ...filters, startTime: start, endTime: end })
-          }
         }}
       />
     </LogsFilterField>
@@ -321,7 +311,6 @@ export function CommonLogsFilterBar<TData>(
         placeholder={t('Model Name')}
         value={filters.model || ''}
         onChange={(e) => handleChange('model', e.target.value)}
-        onKeyDown={handleKeyDown}
       />
     </LogsFilterField>
   )
@@ -336,7 +325,6 @@ export function CommonLogsFilterBar<TData>(
         className='h-8 min-w-0 text-sm leading-5'
         value={filters.group || ''}
         onValueChange={(value) => handleChange('group', value ?? '')}
-        onKeyDown={handleKeyDown}
       />
     </LogsFilterField>
   )
@@ -421,7 +409,6 @@ export function CommonLogsFilterBar<TData>(
           className={sensitiveInputClass}
           value={filters.token || ''}
           onChange={(e) => handleChange('token', e.target.value)}
-          onKeyDown={handleKeyDown}
         />
       </LogsFilterField>
       {isAdmin && (
@@ -431,7 +418,6 @@ export function CommonLogsFilterBar<TData>(
             className={sensitiveInputClass}
             value={filters.username || ''}
             onChange={(e) => handleChange('username', e.target.value)}
-            onKeyDown={handleKeyDown}
           />
         </LogsFilterField>
       )}
@@ -441,7 +427,6 @@ export function CommonLogsFilterBar<TData>(
             placeholder={t('Channel ID')}
             value={filters.channel || ''}
             onChange={(e) => handleChange('channel', e.target.value)}
-            onKeyDown={handleKeyDown}
           />
         </LogsFilterField>
       )}
@@ -450,7 +435,6 @@ export function CommonLogsFilterBar<TData>(
           placeholder={t('Request ID')}
           value={filters.requestId || ''}
           onChange={(e) => handleChange('requestId', e.target.value)}
-          onKeyDown={handleKeyDown}
         />
       </LogsFilterField>
       <LogsFilterField>
@@ -458,7 +442,6 @@ export function CommonLogsFilterBar<TData>(
           placeholder={t('Upstream Request ID')}
           value={filters.upstreamRequestId || ''}
           onChange={(e) => handleChange('upstreamRequestId', e.target.value)}
-          onKeyDown={handleKeyDown}
         />
       </LogsFilterField>
     </>
@@ -495,7 +478,7 @@ export function CommonLogsFilterBar<TData>(
       hasAdvancedActiveFilters={hasExpandedFilters}
       advancedFilterCount={expandedFilterCount}
       hasActiveFilters={hasAdditionalFilters}
-      onSearch={() => handleApply()}
+      autoApply
       searchLoading={fetchingLogs > 0}
       onReset={handleReset}
     />

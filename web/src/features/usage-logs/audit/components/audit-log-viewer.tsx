@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { DataTablePage, useDataTable } from '@/components/data-table'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { useDebounce } from '@/hooks/use-debounce'
 import { requireServerSuccess } from '@/lib/server-error-message'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -25,7 +26,15 @@ export function AuditLogViewer(props: {
   const userId = useAuthStore((state) => state.auth.user?.id)
   const [filters, setFilters] = useState<AuditFilters>({ p: 1, page_size: 20 })
   const [tokenScope, setTokenScope] = useState('all')
-  const params = { ...filters }
+  const debouncedTokenRef = useDebounce(filters.token_ref, 300)
+  const debouncedRequestId = useDebounce(filters.request_id, 300)
+  const debouncedUsername = useDebounce(filters.username, 300)
+  const params = {
+    ...filters,
+    token_ref: debouncedTokenRef,
+    request_id: debouncedRequestId,
+    username: debouncedUsername,
+  }
   if (props.accessOnly) params.category = 'access_token'
   if (tokenScope === 'current') params.token_ref = props.currentTokenRef
   if (tokenScope === 'historical') {
@@ -118,9 +127,6 @@ export function AuditLogViewer(props: {
                 update({})
               }}
               isFetching={query.isFetching}
-              onSearch={() => {
-                if (!invalidRange && canQuery) void query.refetch()
-              }}
               onReset={() => {
                 setTokenScope('all')
                 setFilters({ p: 1, page_size: filters.page_size })

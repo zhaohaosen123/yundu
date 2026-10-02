@@ -1,11 +1,12 @@
-import { useQueryClient, useIsFetching } from '@tanstack/react-query'
+import { useIsFetching } from '@tanstack/react-query'
 import { useNavigate, getRouteApi } from '@tanstack/react-router'
-import { type Table } from '@tanstack/react-table'
-import { useState, useEffect, useCallback } from 'react'
+import type { Table } from '@tanstack/react-table'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useDebounce } from '@/hooks/use-debounce'
+
 import { buildSearchParams } from '../lib/filter'
-import { getDefaultTimeRange } from '../lib/utils'
 import type { DrawingLogFilters, LogCategory, TaskLogFilters } from '../types'
 import { CompactDateTimeRangePicker } from './compact-date-time-range-picker'
 import {
@@ -49,39 +50,38 @@ function setFilterValue(
 export function TaskLogsFilterBar<TData>(props: TaskLogsFilterBarProps<TData>) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const searchParams = route.useSearch()
   const { isAdminView: isAdmin } = useLogsViewScope()
   const fetchingLogs = useIsFetching({ queryKey: ['logs'] })
 
-  const [filters, setFilters] = useState<TaskLogsFilters>(() => {
-    const { start, end } = getDefaultTimeRange()
-    return { startTime: start, endTime: end }
-  })
-
-  useEffect(() => {
-    const { start, end } = getDefaultTimeRange()
+  const sourceKey = JSON.stringify([
+    props.logCategory,
+    searchParams.startTime,
+    searchParams.endTime,
+    searchParams.channel,
+    searchParams.filter,
+  ])
+  const urlFilters = useMemo<TaskLogsFilters>(() => {
     const baseFilters = {
       startTime: searchParams.startTime
         ? new Date(searchParams.startTime)
-        : start,
-      endTime: searchParams.endTime ? new Date(searchParams.endTime) : end,
+        : undefined,
+      endTime: searchParams.endTime
+        ? new Date(searchParams.endTime)
+        : undefined,
       ...(searchParams.channel
         ? { channel: String(searchParams.channel) }
         : {}),
     }
-    const next: TaskLogsFilters =
-      props.logCategory === 'drawing'
-        ? {
-            ...baseFilters,
-            ...(searchParams.filter ? { mjId: searchParams.filter } : {}),
-          }
-        : {
-            ...baseFilters,
-            ...(searchParams.filter ? { taskId: searchParams.filter } : {}),
-          }
-
-    setFilters(next)
+    return props.logCategory === 'drawing'
+      ? {
+          ...baseFilters,
+          ...(searchParams.filter ? { mjId: searchParams.filter } : {}),
+        }
+      : {
+          ...baseFilters,
+          ...(searchParams.filter ? { taskId: searchParams.filter } : {}),
+        }
   }, [
     props.logCategory,
     searchParams.startTime,
@@ -89,56 +89,73 @@ export function TaskLogsFilterBar<TData>(props: TaskLogsFilterBarProps<TData>) {
     searchParams.channel,
     searchParams.filter,
   ])
+  const [draft, setDraft] = useState({ sourceKey, filters: urlFilters })
+  const filters = draft.sourceKey === sourceKey ? draft.filters : urlFilters
+  const debouncedDraft = useDebounce(draft, 300)
+
+  useEffect(() => {
+    if (
+      draft.sourceKey !== sourceKey ||
+      debouncedDraft.sourceKey !== sourceKey ||
+      JSON.stringify(
+        buildSearchParams(debouncedDraft.filters, props.logCategory)
+      ) === JSON.stringify(buildSearchParams(urlFilters, props.logCategory))
+    ) {
+      return
+    }
+    void navigate({
+      to: '/usage-logs/$section',
+      params: { section: props.logCategory },
+      search: {
+        ...buildSearchParams(debouncedDraft.filters, props.logCategory),
+        page: 1,
+      },
+      replace: true,
+    })
+  }, [
+    debouncedDraft,
+    draft.sourceKey,
+    navigate,
+    props.logCategory,
+    sourceKey,
+    urlFilters,
+  ])
 
   const handleChange = useCallback(
     (field: keyof TaskLogsFilters, value: Date | string | undefined) => {
-      setFilters((prev) => ({ ...prev, [field]: value }))
+      setDraft((previous) => ({
+        sourceKey,
+        filters: {
+          ...(previous.sourceKey === sourceKey ? previous.filters : urlFilters),
+          [field]: value,
+        },
+      }))
     },
-    []
+    [sourceKey, urlFilters]
   )
-
-  const handleApply = useCallback(() => {
-    const filterParams = buildSearchParams(filters, props.logCategory)
-    navigate({
-      to: '/usage-logs/$section',
-      params: { section: props.logCategory },
-      search: {
-        ...filterParams,
-        page: 1,
-      },
-    })
-    queryClient.invalidateQueries({ queryKey: ['logs'] })
-  }, [filters, navigate, props.logCategory, queryClient])
 
   const handleReset = useCallback(() => {
-    const { start, end } = getDefaultTimeRange()
-    const resetFilters: TaskLogsFilters = { startTime: start, endTime: end }
-    setFilters(resetFilters)
-
-    navigate({
+    setDraft({ sourceKey, filters: {} })
+    void navigate({
       to: '/usage-logs/$section',
       params: { section: props.logCategory },
-      search: {
-        page: 1,
-        startTime: start.getTime(),
-        endTime: end.getTime(),
-      },
+      search: { page: 1 },
+      replace: true,
     })
-    queryClient.invalidateQueries({ queryKey: ['logs'] })
-  }, [navigate, props.logCategory, queryClient])
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') handleApply()
-    },
-    [handleApply]
-  )
+  }, [navigate, props.logCategory, sourceKey])
 
   const handleFilterChange = useCallback(
     (value: string) => {
-      setFilters((prev) => setFilterValue(prev, props.logCategory, value))
+      setDraft((previous) => ({
+        sourceKey,
+        filters: setFilterValue(
+          previous.sourceKey === sourceKey ? previous.filters : urlFilters,
+          props.logCategory,
+          value
+        ),
+      }))
     },
-    [props.logCategory]
+    [props.logCategory, sourceKey, urlFilters]
   )
 
   const filterValue = getFilterValue(filters, props.logCategory)
@@ -146,7 +163,11 @@ export function TaskLogsFilterBar<TData>(props: TaskLogsFilterBarProps<TData>) {
     props.logCategory === 'drawing'
       ? t('Filter by MjProxy task ID')
       : t('Filter by task ID')
-  const hasAdditionalFilters = !!filterValue || !!filters.channel
+  const hasAdditionalFilters =
+    !!filterValue ||
+    !!filters.channel ||
+    !!filters.startTime ||
+    !!filters.endTime
   const dateRangeFilter = (
     <LogsFilterField wide>
       <CompactDateTimeRangePicker
@@ -166,7 +187,6 @@ export function TaskLogsFilterBar<TData>(props: TaskLogsFilterBarProps<TData>) {
         placeholder={placeholder}
         value={filterValue}
         onChange={(e) => handleFilterChange(e.target.value)}
-        onKeyDown={handleKeyDown}
       />
     </LogsFilterField>
   )
@@ -176,7 +196,6 @@ export function TaskLogsFilterBar<TData>(props: TaskLogsFilterBarProps<TData>) {
         placeholder={t('Channel ID')}
         value={filters.channel || ''}
         onChange={(e) => handleChange('channel', e.target.value)}
-        onKeyDown={handleKeyDown}
       />
     </LogsFilterField>
   ) : null
@@ -200,7 +219,7 @@ export function TaskLogsFilterBar<TData>(props: TaskLogsFilterBarProps<TData>) {
       }
       mobileFilterCount={[filterValue, filters.channel].filter(Boolean).length}
       hasActiveFilters={hasAdditionalFilters}
-      onSearch={handleApply}
+      autoApply
       searchLoading={fetchingLogs > 0}
       onReset={handleReset}
     />

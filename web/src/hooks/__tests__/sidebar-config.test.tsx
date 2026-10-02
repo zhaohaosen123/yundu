@@ -162,3 +162,19 @@ describe('audit log sidebar entry', () => {
     expect(titles).toContain('Audit Logs')
   })
 })
+
+describe('user console navigation', () => {
+  it('omits chat tools and keeps model pricing in the console', () => {
+    const { result } = sidebarFor()
+    const groups = result.current
+    expect(groups.some((group) => group.id === 'chat')).toBe(false)
+    expect(groups.flatMap((group) => group.items)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: 'Model Pricing',
+          url: '/model-pricing',
+        }),
+      ])
+    )
+  })
+})

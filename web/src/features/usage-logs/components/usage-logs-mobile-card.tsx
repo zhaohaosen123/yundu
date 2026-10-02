@@ -1,5 +1,6 @@
 import { flexRender, type Cell, type Table } from '@tanstack/react-table'
 import { Database } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -30,6 +31,7 @@ interface UsageLogsMobileListProps<TData> {
   isLoading?: boolean
   emptyTitle?: string
   emptyDescription?: string
+  emptyAction?: ReactNode
   logCategory: LogCategory
 }
 
@@ -223,6 +225,7 @@ export function UsageLogsMobileList<TData>({
   isLoading = false,
   emptyTitle,
   emptyDescription,
+  emptyAction,
   logCategory,
 }: UsageLogsMobileListProps<TData>) {
   const { t } = useTranslation()
@@ -249,6 +252,7 @@ export function UsageLogsMobileList<TData>({
             <EmptyTitle>{resolvedEmptyTitle}</EmptyTitle>
             <EmptyDescription>{resolvedEmptyDescription}</EmptyDescription>
           </EmptyHeader>
+          {emptyAction}
         </Empty>
       </div>
     )

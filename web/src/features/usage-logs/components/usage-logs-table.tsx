@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getRouteApi } from '@tanstack/react-router'
+import { getRouteApi, Link } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 
@@ -8,6 +8,7 @@ import {
   DataTableRow,
   useDataTable,
 } from '@/components/data-table'
+import { Button } from '@/components/ui/button'
 import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import { createServerError } from '@/lib/server-error-message'
@@ -107,7 +108,7 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
     ],
   })
 
-  const { data, isLoading, isFetching } = useQuery({
+  const query = useQuery({
     queryKey: [
       'logs',
       logCategory,
@@ -144,6 +145,7 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
       return undefined
     },
   })
+  const { data, isLoading, isFetching } = query
 
   const logs = data?.items || []
   const columns = useColumnsByCategory(logCategory, isAdmin, isRoot)
@@ -168,6 +170,35 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
   })
 
   const isCommon = logCategory === 'common'
+  let emptyTitle = t('No Logs Found')
+  let emptyDescription = t(
+    'No usage logs available. Logs will appear here once API calls are made.'
+  )
+  let emptyAction = null
+
+  if (query.isError) {
+    emptyTitle = t('Failed to load logs')
+    emptyDescription = t('Please try again later.')
+    emptyAction = (
+      <Button variant='outline' onClick={() => void query.refetch()}>
+        {t('Retry')}
+      </Button>
+    )
+  } else if (logCategory === 'task') {
+    emptyDescription = t(
+      'Task history shows asynchronous jobs such as image and video generation. Regular API calls appear in Usage Logs.'
+    )
+    emptyAction = (
+      <Button
+        variant='outline'
+        render={
+          <Link to='/usage-logs/$section' params={{ section: 'common' }} />
+        }
+      >
+        {t('View Usage Logs')}
+      </Button>
+    )
+  }
 
   return (
     <DataTablePage
@@ -176,10 +207,9 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
       columns={columns as ColumnDef<Record<string, unknown>>[]}
       isLoading={isLoadingData}
       isFetching={isFetching}
-      emptyTitle={t('No Logs Found')}
-      emptyDescription={t(
-        'No usage logs available. Logs will appear here once API calls are made.'
-      )}
+      emptyTitle={emptyTitle}
+      emptyDescription={emptyDescription}
+      emptyAction={emptyAction}
       skeletonKeyPrefix='usage-log-skeleton'
       applyHeaderSize
       tableClassName={cn(
@@ -190,6 +220,9 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
           table={table}
           isLoading={isLoadingData}
           logCategory={logCategory}
+          emptyTitle={emptyTitle}
+          emptyDescription={emptyDescription}
+          emptyAction={emptyAction}
         />
       }
       toolbar={
