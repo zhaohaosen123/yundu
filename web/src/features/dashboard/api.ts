@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { api } from '@/lib/api'
 
 import type {
+  AdminOverviewData,
   FlowQuotaDataItem,
   QuotaDataItem,
   UptimeGroupResult,
@@ -27,6 +28,14 @@ import type {
 // ============================================================================
 // Dashboard APIs
 // ============================================================================
+
+export async function getAdminOverview(days = 14) {
+  const res = await api.get<{
+    success: boolean
+    data: AdminOverviewData
+  }>('/api/admin/overview', { params: { days } })
+  return res.data
+}
 
 // ----------------------------------------------------------------------------
 // Quota & Usage Data

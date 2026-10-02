@@ -35,12 +35,14 @@ import { SectionPageLayout } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 import { getApiKeys } from '@/features/keys/api'
 import type { ApiKey } from '@/features/keys/types'
+import { ROLE } from '@/lib/roles'
 import { requireServerSuccess } from '@/lib/server-error-message'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { useDashboardContentVisibility } from '../../hooks/use-status-data'
 import { PerformanceOverview } from '../models/performance-overview'
+import { AdminOverviewDashboard } from './admin-overview-dashboard'
 import { AnalyticsPanel } from './analytics-panel'
 import { AnnouncementsPanel } from './announcements-panel'
 import { ApiEndpointBar } from './api-endpoint-bar'
@@ -144,7 +146,7 @@ function OnboardingRail(props: { steps: StartStep[] }) {
   )
 }
 
-export function OverviewDashboard() {
+function UserOverviewDashboard() {
   const { t } = useTranslation()
   const user = useAuthStore((state) => state.auth.user)
   const { uptimeKuma: showUptimePanel } = useDashboardContentVisibility()
@@ -224,4 +226,14 @@ export function OverviewDashboard() {
       </SectionPageLayout.Content>
     </SectionPageLayout>
   )
+}
+
+export function OverviewDashboard() {
+  const role = useAuthStore((state) => state.auth.user?.role)
+
+  if (role && role >= ROLE.ADMIN) {
+    return <AdminOverviewDashboard />
+  }
+
+  return <UserOverviewDashboard />
 }

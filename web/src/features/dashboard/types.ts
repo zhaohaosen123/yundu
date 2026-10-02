@@ -33,6 +33,65 @@ export interface QuotaDataItem {
   quota?: number
 }
 
+export interface AdminOverviewSummary {
+  total_users: number
+  enabled_users: number
+  new_users_today: number
+  active_users_today: number
+  active_users_30_days: number
+  requests_today: number
+  tokens_today: number
+  quota_today: number
+  revenue_today: number
+  revenue_30_days: number
+  revenue_total: number
+  paying_users_30_days: number
+  completed_topups: number
+  pending_topups: number
+  total_requests: number
+  total_used_quota: number
+  total_remaining_quota: number
+}
+
+export interface AdminOverviewTrendPoint {
+  date: string
+  registrations: number
+  revenue: number
+  requests: number
+  tokens: number
+  quota: number
+}
+
+export interface AdminOverviewUser {
+  id: number
+  username: string
+  display_name: string
+  group: string
+  status: number
+  created_at: number
+  last_login_at: number
+}
+
+export interface AdminOverviewTopUp {
+  id: number
+  user_id: number
+  username: string
+  money: number
+  payment_method: string
+  create_time: number
+  complete_time: number
+  status: string
+}
+
+export interface AdminOverviewData {
+  generated_at: number
+  period_days: number
+  summary: AdminOverviewSummary
+  trend: AdminOverviewTrendPoint[]
+  recent_users: AdminOverviewUser[]
+  recent_topups: AdminOverviewTopUp[]
+}
+
 export interface FlowQuotaDataItem {
   user_id?: number
   username?: string

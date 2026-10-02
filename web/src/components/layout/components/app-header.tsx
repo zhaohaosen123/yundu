@@ -16,12 +16,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { ShieldCheck } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+
 import { ConfigDrawer } from '@/components/config-drawer'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
+import { Badge } from '@/components/ui/badge'
 import { SystemUpdateAction } from '@/features/system-update/system-update-action'
 import { useNotifications } from '@/hooks/use-notifications'
+import { ROLE } from '@/lib/roles'
+import { useAuthStore } from '@/stores/auth-store'
 
 import { Header } from './header'
 import { SystemBrand } from './system-brand'
@@ -84,6 +90,9 @@ export function AppHeader({
   showConfigDrawer = true,
   showProfileDropdown = true,
 }: AppHeaderProps) {
+  const { t } = useTranslation()
+  const role = useAuthStore((state) => state.auth.user?.role)
+  const isAdmin = Boolean(role && role >= ROLE.ADMIN)
   // Notifications hook
   const notifications = useNotifications()
 
@@ -91,6 +100,12 @@ export function AppHeader({
     <Header>
       <div className='@container/system-brand flex min-w-0 flex-1 items-center gap-1'>
         <SystemBrand variant='inline' />
+        {isAdmin ? (
+          <Badge variant='outline' className='hidden gap-1 sm:inline-flex'>
+            <ShieldCheck className='size-3' aria-hidden='true' />
+            {t('Operations console')}
+          </Badge>
+        ) : null}
         <SystemUpdateAction presentation='version' />
       </div>
 
