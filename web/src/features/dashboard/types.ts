@@ -83,6 +83,20 @@ export interface AdminOverviewTopUp {
   status: string
 }
 
+export interface AdminOverviewUsageUser {
+  user_id: number
+  username: string
+  tokens: number
+  requests: number
+}
+
+export interface AdminOverviewPayingUser {
+  user_id: number
+  username: string
+  amount: number
+  orders: number
+}
+
 export interface AdminOverviewData {
   generated_at: number
   period_days: number
@@ -90,6 +104,8 @@ export interface AdminOverviewData {
   trend: AdminOverviewTrendPoint[]
   recent_users: AdminOverviewUser[]
   recent_topups: AdminOverviewTopUp[]
+  top_usage_users: AdminOverviewUsageUser[]
+  top_paying_users: AdminOverviewPayingUser[]
 }
 
 export interface FlowQuotaDataItem {

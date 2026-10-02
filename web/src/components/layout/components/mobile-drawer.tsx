@@ -28,6 +28,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import useDialogState from '@/hooks/use-dialog'
 import { useIsSidebarModuleVisible } from '@/hooks/use-sidebar-config'
 import { useUserDisplay } from '@/hooks/use-user-display'
+import { ROLE } from '@/lib/roles'
 import type { AuthUser } from '@/stores/auth-store'
 
 import { MOBILE_DRAWER_ANIMATION, MOBILE_DRAWER_CONFIG } from '../constants'
@@ -83,6 +84,7 @@ function MobileUserProfile({ user, onNavigate }: MobileUserProfileProps) {
   const [signOutOpen, setSignOutOpen] = useDialogState()
   const { displayName, initials, roleLabel } = useUserDisplay(user)
   const isSecurityVisible = useIsSidebarModuleVisible('/security')
+  const isAdmin = Boolean(user?.role && user.role >= ROLE.ADMIN)
 
   if (!user) return null
 
@@ -115,14 +117,16 @@ function MobileUserProfile({ user, onNavigate }: MobileUserProfileProps) {
         </div>
 
         {/* Navigation links - same style as top nav */}
-        <Link
-          to='/profile'
-          onClick={onNavigate}
-          className='text-primary/60 hover:text-primary/80 border-border flex items-center gap-2.5 border-b p-2.5 transition-colors'
-        >
-          <User className='size-4' />
-          {t('Profile')}
-        </Link>
+        {!isAdmin && (
+          <Link
+            to='/profile'
+            onClick={onNavigate}
+            className='text-primary/60 hover:text-primary/80 border-border flex items-center gap-2.5 border-b p-2.5 transition-colors'
+          >
+            <User className='size-4' />
+            {t('Profile')}
+          </Link>
+        )}
 
         {isSecurityVisible && (
           <Link
@@ -141,7 +145,7 @@ function MobileUserProfile({ user, onNavigate }: MobileUserProfileProps) {
           className='text-primary/60 hover:text-primary/80 border-border flex items-center gap-2.5 border-b p-2.5 transition-colors'
         >
           <Wallet className='size-4' />
-          {t('Wallet')}
+          {isAdmin ? t('Billing History') : t('Wallet')}
         </Link>
 
         {/* Sign out - consistent style */}

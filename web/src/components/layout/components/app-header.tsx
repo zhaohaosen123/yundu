@@ -97,7 +97,7 @@ export function AppHeader({
   const notifications = useNotifications()
 
   return (
-    <Header>
+    <Header className='yundu-app-header'>
       <div className='@container/system-brand flex min-w-0 flex-1 items-center gap-1'>
         <SystemBrand variant='inline' />
         {isAdmin ? (

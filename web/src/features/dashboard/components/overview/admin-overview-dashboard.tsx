@@ -239,6 +239,87 @@ function AdminOverviewContent({ data }: { data: AdminOverviewData }) {
 
       <section className='grid gap-4 xl:grid-cols-2'>
         <Card data-yundu-interactive className='min-w-0 overflow-hidden'>
+          <CardHeader className='border-b'>
+            <CardTitle>{t('Highest token usage')}</CardTitle>
+            <CardDescription>
+              {t('Users ranked by tokens in the selected period')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className='p-0'>
+            {data.top_usage_users.length === 0 ? (
+              <EmptyList>{t('No usage in this period')}</EmptyList>
+            ) : (
+              <div className='divide-y'>
+                {data.top_usage_users.map((user, index) => (
+                  <div
+                    key={user.user_id}
+                    className='hover:bg-accent/60 flex items-center gap-3 px-4 py-3 transition-colors sm:px-5'
+                  >
+                    <span className='text-muted-foreground w-6 shrink-0 font-mono text-xs'>
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <span className='min-w-0 flex-1 truncate text-sm font-medium'>
+                      {user.username || `${t('User ID')} ${user.user_id}`}
+                    </span>
+                    <div className='shrink-0 text-right'>
+                      <div className='font-mono text-sm font-semibold tabular-nums'>
+                        {formatCompactNumber(user.tokens)}
+                      </div>
+                      <div className='text-muted-foreground text-xs'>
+                        {t('{{count}} requests', {
+                          count: formatNumber(user.requests),
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card data-yundu-interactive className='min-w-0 overflow-hidden'>
+          <CardHeader className='border-b'>
+            <CardTitle>{t('Highest recharge totals')}</CardTitle>
+            <CardDescription>
+              {t('Users ranked by confirmed payments in the selected period')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className='p-0'>
+            {data.top_paying_users.length === 0 ? (
+              <EmptyList>{t('No confirmed payments in this period')}</EmptyList>
+            ) : (
+              <div className='divide-y'>
+                {data.top_paying_users.map((user, index) => (
+                  <div
+                    key={user.user_id}
+                    className='hover:bg-accent/60 flex items-center gap-3 px-4 py-3 transition-colors sm:px-5'
+                  >
+                    <span className='text-muted-foreground w-6 shrink-0 font-mono text-xs'>
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <span className='min-w-0 flex-1 truncate text-sm font-medium'>
+                      {user.username || `${t('User ID')} ${user.user_id}`}
+                    </span>
+                    <div className='shrink-0 text-right'>
+                      <div className='font-mono text-sm font-semibold tabular-nums'>
+                        {formatCurrency(user.amount)}
+                      </div>
+                      <div className='text-muted-foreground text-xs'>
+                        {t('{{count}} orders', {
+                          count: formatNumber(user.orders),
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className='grid gap-4 xl:grid-cols-2'>
+        <Card data-yundu-interactive className='min-w-0 overflow-hidden'>
           <CardHeader className='flex flex-row items-center justify-between gap-3 border-b'>
             <div>
               <CardTitle>{t('Latest registrations')}</CardTitle>

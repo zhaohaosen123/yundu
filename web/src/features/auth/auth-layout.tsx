@@ -22,6 +22,8 @@ import { useTranslation } from 'react-i18next'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSystemConfig } from '@/hooks/use-system-config'
 
+import './auth-layout.css'
+
 type AuthLayoutProps = {
   children: React.ReactNode
 }
@@ -31,31 +33,45 @@ export function AuthLayout({ children }: AuthLayoutProps) {
   const { systemName, logo, loading } = useSystemConfig()
 
   return (
-    <div className='relative grid h-svh max-w-none'>
-      <Link
-        to='/'
-        className='absolute top-4 left-4 z-10 flex items-center gap-2 transition-opacity hover:opacity-80 sm:top-8 sm:left-8'
-      >
-        <div className='relative h-8 w-8'>
-          {loading ? (
-            <Skeleton className='absolute inset-0 rounded-full' />
-          ) : (
-            <img
-              src={logo}
-              alt={t('Logo')}
-              className='h-8 w-8 rounded-full object-cover'
-            />
-          )}
+    <div className='yundu-auth-layout'>
+      <aside className='yundu-auth-aside' aria-hidden='true'>
+        <div className='yundu-auth-aside-grid' />
+        <div className='yundu-auth-aside-orbit yundu-auth-aside-orbit-outer' />
+        <div className='yundu-auth-aside-orbit yundu-auth-aside-orbit-inner' />
+        <div className='yundu-auth-aside-core'>云渡</div>
+        <div className='yundu-auth-aside-copy'>
+          <span>YUNDU / INTELLIGENCE GATEWAY</span>
+          <h2>
+            {t('Connect every idea')}
+            <br />
+            {t('to the right intelligence.')}
+          </h2>
+          <p>{t('Intelligent access, one gateway')}</p>
         </div>
-        {loading ? (
-          <Skeleton className='h-6 w-24' />
-        ) : (
-          <h1 className='text-xl font-medium'>{systemName}</h1>
-        )}
-      </Link>
-      <div className='container flex items-center pt-16 sm:pt-0'>
-        <div className='mx-auto flex w-full flex-col justify-center space-y-2 px-4 py-8 sm:w-[480px] sm:p-8'>
-          {children}
+      </aside>
+      <div className='yundu-auth-main'>
+        <Link to='/' className='yundu-auth-brand'>
+          <div className='relative h-8 w-8'>
+            {loading ? (
+              <Skeleton className='absolute inset-0 rounded-full' />
+            ) : (
+              <img
+                src={logo}
+                alt={t('Logo')}
+                className='h-8 w-8 rounded-full object-cover'
+              />
+            )}
+          </div>
+          {loading ? (
+            <Skeleton className='h-6 w-24' />
+          ) : (
+            <h1 className='text-xl font-semibold'>{systemName}</h1>
+          )}
+        </Link>
+        <div className='yundu-auth-form-wrap'>
+          <div className='mx-auto flex w-full max-w-[480px] flex-col justify-center space-y-2 px-4 py-8 sm:p-8'>
+            {children}
+          </div>
         </div>
       </div>
     </div>

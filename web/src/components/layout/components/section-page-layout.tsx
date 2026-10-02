@@ -81,7 +81,7 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
   return (
     <PageFooterProvider container={footerContainer}>
       <Main>
-        <div className='border-border/60 bg-background/70 shrink-0 border-b px-3 pt-3 pb-2.5 backdrop-blur-sm sm:px-4 sm:pt-4 sm:pb-3'>
+        <div className='yundu-page-heading border-border/60 bg-background/70 shrink-0 border-b px-3 pt-3 pb-2.5 backdrop-blur-sm sm:px-4 sm:pt-4 sm:pb-3'>
           {breadcrumb != null && (
             <div className='mb-2 sm:mb-3'>{breadcrumb}</div>
           )}

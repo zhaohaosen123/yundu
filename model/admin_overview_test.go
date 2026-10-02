@@ -88,4 +88,12 @@ func TestGetAdminOverviewAggregatesGlobalOperationsData(t *testing.T) {
 	assert.Equal(t, float64(10), overview.Trend[13].Revenue)
 	assert.Equal(t, int64(3), overview.Trend[13].Requests)
 	assert.Equal(t, int64(120), overview.Trend[13].Tokens)
+	require.Len(t, overview.TopUsageUsers, 1)
+	assert.Equal(t, activeUser.Id, overview.TopUsageUsers[0].UserID)
+	assert.Equal(t, int64(120), overview.TopUsageUsers[0].Tokens)
+	assert.Equal(t, int64(3), overview.TopUsageUsers[0].Requests)
+	require.Len(t, overview.TopPayingUsers, 1)
+	assert.Equal(t, activeUser.Id, overview.TopPayingUsers[0].UserID)
+	assert.Equal(t, float64(10), overview.TopPayingUsers[0].Amount)
+	assert.Equal(t, int64(1), overview.TopPayingUsers[0].Orders)
 }

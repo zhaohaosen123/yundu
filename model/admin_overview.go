@@ -62,13 +62,29 @@ type AdminOverviewTopUp struct {
 	Status        string  `json:"status"`
 }
 
+type AdminOverviewUsageUser struct {
+	UserID   int    `json:"user_id"`
+	Username string `json:"username"`
+	Tokens   int64  `json:"tokens"`
+	Requests int64  `json:"requests"`
+}
+
+type AdminOverviewPayingUser struct {
+	UserID   int     `json:"user_id"`
+	Username string  `json:"username"`
+	Amount   float64 `json:"amount"`
+	Orders   int64   `json:"orders"`
+}
+
 type AdminOverviewData struct {
-	GeneratedAt  int64                     `json:"generated_at"`
-	PeriodDays   int                       `json:"period_days"`
-	Summary      AdminOverviewSummary      `json:"summary"`
-	Trend        []AdminOverviewTrendPoint `json:"trend"`
-	RecentUsers  []AdminOverviewUser       `json:"recent_users"`
-	RecentTopUps []AdminOverviewTopUp      `json:"recent_topups"`
+	GeneratedAt    int64                     `json:"generated_at"`
+	PeriodDays     int                       `json:"period_days"`
+	Summary        AdminOverviewSummary      `json:"summary"`
+	Trend          []AdminOverviewTrendPoint `json:"trend"`
+	RecentUsers    []AdminOverviewUser       `json:"recent_users"`
+	RecentTopUps   []AdminOverviewTopUp      `json:"recent_topups"`
+	TopUsageUsers  []AdminOverviewUsageUser  `json:"top_usage_users"`
+	TopPayingUsers []AdminOverviewPayingUser `json:"top_paying_users"`
 }
 
 type adminOverviewUserAggregate struct {
@@ -115,9 +131,11 @@ func GetAdminOverview(days int) (*AdminOverviewData, error) {
 	thirtyDayStart := todayStart - 29*86400
 
 	data := &AdminOverviewData{
-		GeneratedAt: now.Unix(),
-		PeriodDays:  days,
-		Trend:       make([]AdminOverviewTrendPoint, 0, days),
+		GeneratedAt:    now.Unix(),
+		PeriodDays:     days,
+		Trend:          make([]AdminOverviewTrendPoint, 0, days),
+		TopUsageUsers:  make([]AdminOverviewUsageUser, 0),
+		TopPayingUsers: make([]AdminOverviewPayingUser, 0),
 	}
 
 	for offset := 0; offset < days; offset++ {
@@ -219,6 +237,22 @@ func GetAdminOverview(days int) (*AdminOverviewData, error) {
 		return nil, err
 	}
 	if err := DB.Table("top_ups").Select("top_ups.id, top_ups.user_id, COALESCE(users.username, '') AS username, top_ups.money, top_ups.payment_method, top_ups.create_time, top_ups.complete_time, top_ups.status").Joins("LEFT JOIN users ON users.id = top_ups.user_id").Order("top_ups.create_time DESC").Limit(adminOverviewRecentLimit).Scan(&data.RecentTopUps).Error; err != nil {
+		return nil, err
+	}
+	if err := DB.Table("quota_data").
+		Select("quota_data.user_id, COALESCE(MAX(users.username), MAX(quota_data.username), '') AS username, COALESCE(SUM(quota_data.token_used), 0) AS tokens, COALESCE(SUM(quota_data.count), 0) AS requests").
+		Joins("LEFT JOIN users ON users.id = quota_data.user_id").
+		Where("quota_data.created_at >= ?", trendStart).
+		Group("quota_data.user_id").
+		Order("tokens DESC").Limit(10).Scan(&data.TopUsageUsers).Error; err != nil {
+		return nil, err
+	}
+	if err := DB.Table("top_ups").
+		Select("top_ups.user_id, COALESCE(MAX(users.username), '') AS username, COALESCE(SUM(top_ups.money), 0) AS amount, COUNT(top_ups.id) AS orders").
+		Joins("LEFT JOIN users ON users.id = top_ups.user_id").
+		Where("top_ups.status = ? AND top_ups.complete_time >= ?", common.TopUpStatusSuccess, trendStart).
+		Group("top_ups.user_id").
+		Order("amount DESC").Limit(10).Scan(&data.TopPayingUsers).Error; err != nil {
 		return nil, err
 	}
 

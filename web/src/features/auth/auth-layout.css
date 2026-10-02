@@ -1,0 +1,186 @@
+/*
+Copyright (C) 2023-2026 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+.yundu-auth-layout {
+  display: grid;
+  grid-template-columns: minmax(360px, 43%) minmax(0, 1fr);
+  min-height: 100svh;
+  background: var(--background);
+}
+.yundu-auth-aside {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  color: #edf9f3;
+  background: radial-gradient(
+    circle at 50% 48%,
+    #195348 0,
+    #0d3135 37%,
+    #071d25 74%
+  );
+}
+.yundu-auth-aside-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  background-image:
+    linear-gradient(rgb(147 232 203 / 15%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(147 232 203 / 15%) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(circle at 50% 45%, black, transparent 68%);
+}
+.yundu-auth-aside-orbit {
+  position: absolute;
+  top: 41%;
+  left: 50%;
+  aspect-ratio: 1;
+  border: 1px solid rgb(128 232 200 / 20%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.yundu-auth-aside-orbit-outer {
+  width: min(77%, 500px);
+  border-style: dashed;
+  animation: yundu-auth-turn 80s linear infinite;
+}
+.yundu-auth-aside-orbit-inner {
+  width: min(57%, 365px);
+  box-shadow: 0 0 100px rgb(128 232 200 / 12%);
+}
+.yundu-auth-aside-orbit-inner::before,
+.yundu-auth-aside-orbit-inner::after {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #80e8c8;
+  box-shadow: 0 0 18px #80e8c8;
+  content: '';
+}
+.yundu-auth-aside-orbit-inner::before {
+  top: 14%;
+  left: 14%;
+}
+.yundu-auth-aside-orbit-inner::after {
+  right: 14%;
+  bottom: 14%;
+}
+.yundu-auth-aside-core {
+  position: absolute;
+  top: 41%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 146px;
+  height: 146px;
+  border: 1px solid rgb(128 232 200 / 45%);
+  border-radius: 50%;
+  color: white;
+  background: #103c3d;
+  box-shadow:
+    0 0 0 12px rgb(128 232 200 / 5%),
+    0 0 50px rgb(128 232 200 / 22%);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  transform: translate(-50%, -50%);
+}
+.yundu-auth-aside-copy {
+  position: absolute;
+  right: 7%;
+  bottom: 7%;
+  left: 7%;
+}
+.yundu-auth-aside-copy span {
+  color: #80e8c8;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+}
+.yundu-auth-aside-copy h2 {
+  margin-top: 17px;
+  font-size: clamp(2rem, 3.3vw, 3.4rem);
+  font-weight: 550;
+  letter-spacing: -0.06em;
+  line-height: 1.15;
+}
+.yundu-auth-aside-copy p {
+  margin-top: 14px;
+  color: #9ec8b8;
+  font-size: 13px;
+}
+.yundu-auth-main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100svh;
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in oklch, var(--primary) 8%, transparent),
+      transparent 38%
+    ),
+    var(--background);
+}
+.yundu-auth-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-start;
+  margin: 29px 0 0 34px;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+.yundu-auth-brand:hover {
+  opacity: 0.8;
+  transform: translateY(-2px);
+}
+.yundu-auth-form-wrap {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 24px 0 55px;
+}
+@keyframes yundu-auth-turn {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+@media (max-width: 900px) {
+  .yundu-auth-layout {
+    grid-template-columns: 1fr;
+  }
+  .yundu-auth-aside {
+    display: none;
+  }
+  .yundu-auth-brand {
+    margin: 20px 0 0 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .yundu-auth-aside-orbit,
+  .yundu-auth-brand {
+    animation: none;
+    transition: none;
+  }
+}

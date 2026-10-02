@@ -26,8 +26,16 @@ import { useTheme } from '@/context/theme-provider'
 import { isLikelyHtml } from '@/lib/content-format'
 import { useAuthStore } from '@/stores/auth-store'
 
-import { CTA, Features, Hero, HowItWorks, Stats } from './components'
+import {
+  Capabilities,
+  FinalCta,
+  Journey,
+  ModelRibbon,
+} from './components/brand-sections'
+import { Hero } from './components/sections/hero'
 import { useHomePageContent } from './hooks'
+
+import './yundu-home.css'
 
 export function Home() {
   const { i18n, t } = useTranslation()
@@ -121,13 +129,17 @@ export function Home() {
   }
 
   return (
-    <PublicLayout showMainContainer={false}>
-      <Hero isAuthenticated={isAuthenticated} />
-      <Stats />
-      <Features />
-      <HowItWorks />
-      <CTA isAuthenticated={isAuthenticated} />
-      <Footer />
-    </PublicLayout>
+    <div className='yundu-public-shell'>
+      <PublicLayout showMainContainer={false}>
+        <main className='yundu-home'>
+          <Hero isAuthenticated={isAuthenticated} />
+          <ModelRibbon />
+          <Capabilities />
+          <Journey />
+          <FinalCta isAuthenticated={isAuthenticated} />
+        </main>
+        <Footer />
+      </PublicLayout>
+    </div>
   )
 }
