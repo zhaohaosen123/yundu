@@ -39,6 +39,8 @@ export function useTopNavLinks(): TopNavLink[] {
 
   // Documentation link (may be external)
   const docsLink: string | undefined = status?.docs_link as string | undefined
+  const hasCustomDocs =
+    docsLink && !/^https?:\/\/docs\.newapi\.pro(?:\/|$)/i.test(docsLink)
 
   const isAuthed = !!auth?.user
 
@@ -70,7 +72,7 @@ export function useTopNavLinks(): TopNavLink[] {
 
   // Docs (supports external links)
   if (modules?.docs !== false) {
-    if (docsLink) {
+    if (hasCustomDocs) {
       links.push({ title: t('Docs'), href: docsLink, external: true })
     } else {
       links.push({ title: t('Docs'), href: '/docs' })

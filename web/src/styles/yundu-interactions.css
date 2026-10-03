@@ -497,3 +497,73 @@
     animation: none !important;
   }
 }
+
+.yundu-doc-step {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0 0 1.75rem;
+  margin-bottom: 1.75rem;
+  border-bottom: 1px solid
+    color-mix(in oklch, var(--primary) 16%, var(--border));
+}
+
+.yundu-doc-step:last-child {
+  border-bottom: 0;
+  margin-bottom: 0;
+}
+
+.yundu-doc-step-icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border: 1px solid color-mix(in oklch, var(--primary) 35%, var(--border));
+  border-radius: 0.5rem;
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 9%, var(--background));
+  transition:
+    transform 450ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 450ms ease;
+}
+
+.yundu-doc-step:hover .yundu-doc-step-icon,
+.yundu-doc-step:focus-within .yundu-doc-step-icon {
+  transform: rotate(-12deg) scale(1.12);
+  box-shadow: 0 0 24px color-mix(in oklch, var(--primary) 33%, transparent);
+}
+
+.yundu-doc-api-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid color-mix(in oklch, var(--primary) 25%, var(--border));
+  border-radius: 0.5rem;
+  background: var(--card);
+}
+
+.yundu-doc-code {
+  overflow: hidden;
+  border: 1px solid rgb(147 229 206 / 24%);
+  border-radius: 0.5rem;
+  background: #09232b;
+  box-shadow: 0 22px 55px -38px rgb(8 86 78 / 70%);
+  transition:
+    box-shadow 350ms ease,
+    transform 350ms ease;
+}
+
+.yundu-doc-code:hover,
+.yundu-doc-code:focus-within {
+  transform: translateY(-4px);
+  box-shadow: 0 25px 60px -30px rgb(36 141 118 / 50%);
+}
+
+@media (prefers-reduced-motion: reduce), (pointer: coarse) {
+  .yundu-doc-step-icon,
+  .yundu-doc-code {
+    transform: none !important;
+  }
+}
