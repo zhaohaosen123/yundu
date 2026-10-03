@@ -16,7 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ShieldCheck } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { House, ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { ConfigDrawer } from '@/components/config-drawer'
@@ -100,6 +101,12 @@ export function AppHeader({
     <Header className='yundu-app-header'>
       <div className='@container/system-brand flex min-w-0 flex-1 items-center gap-1'>
         <SystemBrand variant='inline' />
+        <span className='text-muted-foreground/50 px-1' aria-hidden='true'>
+          /
+        </span>
+        <span className='text-primary truncate text-xs font-semibold tracking-wide'>
+          {t('Console')}
+        </span>
         {isAdmin ? (
           <Badge variant='outline' className='hidden gap-1 sm:inline-flex'>
             <ShieldCheck className='size-3' aria-hidden='true' />
@@ -115,6 +122,13 @@ export function AppHeader({
 
       {rightContent ?? (
         <div className='ms-auto flex shrink-0 items-center gap-1 sm:gap-2'>
+          <Link
+            to='/'
+            className='yundu-return-home text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium'
+          >
+            <House className='size-3.5' aria-hidden='true' />
+            <span className='hidden sm:inline'>{t('Home')}</span>
+          </Link>
           {showSearch && (
             <Search className='w-8 flex-none [&>span]:hidden sm:[&>span]:inline' />
           )}

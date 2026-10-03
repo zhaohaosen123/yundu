@@ -46,6 +46,10 @@ For commercial licensing, please contact support@quantumnous.com
   color: #e9f7f1;
 }
 
+.yundu-public-shell header .yundu-console-entry {
+  color: #06352f;
+}
+
 .yundu-public-shell header button:hover {
   background: rgb(128 232 200 / 12%) !important;
 }

@@ -43,7 +43,7 @@ function ContactQrCard(props: ContactQrCardProps) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
   return (
-    <Card className='w-full'>
+    <Card className='border-primary/15 w-full'>
       <CardHeader className='gap-2 px-5 pt-2 sm:px-6'>
         <div className='text-primary bg-primary/10 flex size-9 items-center justify-center rounded-lg'>
           <HugeiconsIcon icon={QrCode01Icon} strokeWidth={2} />
@@ -111,7 +111,7 @@ export function Contact() {
   return (
     <PublicLayout showMainContainer={false}>
       <main className='mx-auto min-h-[calc(100svh-4rem)] w-full max-w-5xl px-4 pt-28 pb-20 sm:px-6'>
-        <div className='mx-auto mb-10 max-w-2xl text-center'>
+        <div className='yundu-content-hero mx-auto mb-10 max-w-4xl px-5 py-10 text-center sm:px-10 sm:py-14'>
           <p className='text-primary text-xs font-semibold tracking-[0.18em] uppercase'>
             {t('QQ Support')}
           </p>

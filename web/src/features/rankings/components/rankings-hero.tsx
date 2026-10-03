@@ -24,7 +24,7 @@ export function RankingsHero(props: RankingsHeroProps) {
   const { t } = useTranslation()
 
   return (
-    <section className='space-y-5'>
+    <section className='yundu-content-hero space-y-5 px-5 py-8 sm:px-10 sm:py-12'>
       <div className='space-y-2'>
         <h1 className='text-[clamp(1.75rem,4vw,2.5rem)] leading-[1.15] font-bold tracking-tight'>
           {t('Rankings')}

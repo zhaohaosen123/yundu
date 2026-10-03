@@ -173,7 +173,7 @@ export function Pricing({ embedded = false }: { embedded?: boolean }) {
           embedded ? 'pt-6 sm:pt-8' : 'pt-16 sm:pt-20'
         )}
       >
-        <header className='mx-auto mb-5 max-w-3xl pt-5 text-center sm:mb-10 sm:pt-10'>
+        <header className='yundu-content-hero mx-auto mb-6 max-w-5xl px-5 py-10 text-center sm:mb-10 sm:px-10 sm:py-14'>
           <h1 className='text-[clamp(2rem,5.5vw,3.5rem)] leading-[1.15] font-bold tracking-tight'>
             {t('Model Pricing')}
           </h1>

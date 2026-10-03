@@ -46,6 +46,7 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { navEffectFor } from '@/lib/nav-effect'
 
 import { checkIsActive } from '../lib/url-utils'
 import type {
@@ -125,6 +126,7 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
+        data-yundu-effect={navEffectFor(item.url)}
         isActive={checkIsActive(href, item)}
         tooltip={item.title}
         render={
@@ -176,7 +178,12 @@ function SidebarMenuCollapsible({
     >
       <CollapsibleTrigger
         className='group/collapsible-trigger'
-        render={<SidebarMenuButton tooltip={item.title} />}
+        render={
+          <SidebarMenuButton
+            tooltip={item.title}
+            data-yundu-effect={navEffectFor(item.url)}
+          />
+        }
       >
         {item.icon && <item.icon className='shrink-0' />}
         <span className='min-w-0 flex-1 truncate'>{item.title}</span>
@@ -188,6 +195,7 @@ function SidebarMenuCollapsible({
           {item.items.map((subItem) => (
             <SidebarMenuSubItem key={subItem.title}>
               <SidebarMenuSubButton
+                data-yundu-effect={navEffectFor(subItem.url)}
                 isActive={checkIsActive(href, subItem)}
                 render={
                   <Link
@@ -226,6 +234,7 @@ function SidebarMenuCollapsedDropdown({
           className='group/dropdown-trigger'
           render={
             <SidebarMenuButton
+              data-yundu-effect={navEffectFor(item.url)}
               tooltip={item.title}
               isActive={checkIsActive(href, item)}
             />

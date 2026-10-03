@@ -31,6 +31,7 @@ import { SystemUpdateAction } from '@/features/system-update/system-update-actio
 import { useNotifications } from '@/hooks/use-notifications'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
+import { navEffectFor } from '@/lib/nav-effect'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -98,6 +99,8 @@ export function PublicHeader(props: PublicHeaderProps) {
   const isAuthenticated = !!user
   const displaySiteName = customSiteName || systemName
   const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
+  const siteLinks = links.filter((link) => link.href !== '/dashboard')
+  const consoleLink = links.find((link) => link.href === '/dashboard')
 
   let logoContent: ReactNode = (
     <HeaderLogo
@@ -239,7 +242,7 @@ export function PublicHeader(props: PublicHeaderProps) {
 
             {/* Desktop nav */}
             <div className='hidden min-w-0 items-center gap-0.5 lg:flex'>
-              {links.map((link) => {
+              {siteLinks.map((link) => {
                 const isActive = pathname === link.href
                 if (link.external) {
                   return (
@@ -250,10 +253,11 @@ export function PublicHeader(props: PublicHeaderProps) {
                       target='_blank'
                       rel='noopener noreferrer'
                       aria-disabled={link.disabled}
+                      data-yundu-effect={navEffectFor(link.href)}
                       tabIndex={link.disabled ? -1 : undefined}
                       onClick={(event) => handleNavLinkClick(event, link)}
                       className={cn(
-                        'text-muted-foreground hover:text-foreground min-w-0 truncate rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200',
+                        'yundu-signal-link text-muted-foreground hover:text-foreground min-w-0 truncate rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200',
                         link.disabled && 'pointer-events-none opacity-50'
                       )}
                     >
@@ -267,9 +271,10 @@ export function PublicHeader(props: PublicHeaderProps) {
                     to={link.href}
                     title={t(link.title)}
                     disabled={link.disabled}
+                    data-yundu-effect={navEffectFor(link.href)}
                     onClick={(event) => handleNavLinkClick(event, link)}
                     className={cn(
-                      'min-w-0 truncate rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200',
+                      'yundu-signal-link min-w-0 truncate rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200',
                       isActive
                         ? 'text-foreground'
                         : 'text-muted-foreground hover:text-foreground',
@@ -280,6 +285,23 @@ export function PublicHeader(props: PublicHeaderProps) {
                   </Link>
                 )
               })}
+
+              {consoleLink && (
+                <>
+                  <div
+                    className='bg-border/50 mx-2 h-5 w-px'
+                    aria-hidden='true'
+                  />
+                  <Link
+                    to={consoleLink.href}
+                    data-yundu-effect={navEffectFor(consoleLink.href)}
+                    onClick={(event) => handleNavLinkClick(event, consoleLink)}
+                    className='yundu-console-entry rounded-lg px-3 py-1.5 text-sm font-semibold'
+                  >
+                    {t(consoleLink.title)}
+                  </Link>
+                </>
+              )}
 
               {(showLanguageSwitcher ||
                 showThemeSwitch ||
@@ -361,10 +383,13 @@ export function PublicHeader(props: PublicHeaderProps) {
       >
         <div className='flex h-full flex-col justify-between px-8 pt-20 pb-10'>
           <nav className='flex flex-col gap-1'>
-            {links.map((link, i) => {
+            <span className='text-muted-foreground mb-2 text-xs font-semibold tracking-[0.2em] uppercase'>
+              {t('Platform')}
+            </span>
+            {siteLinks.map((link, i) => {
               const isActive = pathname === link.href
               const linkClassName = cn(
-                'flex items-center gap-3 py-3 text-base font-medium tracking-tight transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
+                'yundu-signal-link flex items-center gap-3 rounded-lg px-3 py-3 text-base font-medium tracking-tight transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
                 mobileOpen
                   ? 'translate-y-0 opacity-100'
                   : 'translate-y-4 opacity-0',
@@ -382,6 +407,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                     target='_blank'
                     rel='noopener noreferrer'
                     aria-disabled={link.disabled}
+                    data-yundu-effect={navEffectFor(link.href)}
                     tabIndex={link.disabled ? -1 : undefined}
                     onClick={(event) => handleNavLinkClick(event, link, true)}
                     className={linkClassName}
@@ -396,6 +422,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                   key={`${link.title}:${link.href}`}
                   to={link.href}
                   disabled={link.disabled}
+                  data-yundu-effect={navEffectFor(link.href)}
                   onClick={(event) => handleNavLinkClick(event, link, true)}
                   className={linkClassName}
                   style={transitionStyle}
@@ -415,13 +442,13 @@ export function PublicHeader(props: PublicHeaderProps) {
             )}
             style={{ transitionDelay: mobileOpen ? '250ms' : '0ms' }}
           >
-            {showAuthButtons && (
+            {showAuthButtons && consoleLink && (
               <Link
-                to={isAuthenticated ? '/dashboard' : '/sign-in'}
+                to={isAuthenticated ? consoleLink.href : '/sign-in'}
                 onClick={() => setMobileOpen(false)}
                 className='bg-foreground text-background inline-flex h-10 items-center justify-center rounded-lg text-sm font-medium transition-opacity hover:opacity-90 active:opacity-80'
               >
-                {isAuthenticated ? t('Go to Dashboard') : t('Sign in')}
+                {isAuthenticated ? t('Console') : t('Sign in')}
               </Link>
             )}
           </div>
