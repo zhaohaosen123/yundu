@@ -97,6 +97,7 @@ type User struct {
 	Quota                int                        `json:"quota" gorm:"type:int;default:0"`
 	UsedQuota            int                        `json:"used_quota" gorm:"type:int;default:0;column:used_quota"` // used quota
 	RequestCount         int                        `json:"request_count" gorm:"type:int;default:0;"`               // request number
+	TotalTokens          int64                      `json:"total_tokens" gorm:"-"`
 	Group                string                     `json:"group" gorm:"type:varchar(64);default:'default'"`
 	AffCode              string                     `json:"aff_code" gorm:"type:varchar(32);column:aff_code;uniqueIndex"`
 	AffCount             int                        `json:"aff_count" gorm:"type:int;default:0;column:aff_count"`
@@ -445,6 +446,9 @@ func GetAllUsers(pageInfo *common.PageInfo, sortOptions ...UserSortOptions) (use
 	if err = tx.Commit().Error; err != nil {
 		return nil, 0, err
 	}
+	if err = PopulateUserTokenTotals(users); err != nil {
+		return nil, 0, err
+	}
 
 	return users, total, nil
 }
@@ -512,6 +516,9 @@ func SearchUsers(keyword string, group string, role *int, status *int, startIdx 
 
 	// 提交事务
 	if err = tx.Commit().Error; err != nil {
+		return nil, 0, err
+	}
+	if err = PopulateUserTokenTotals(users); err != nil {
 		return nil, 0, err
 	}
 

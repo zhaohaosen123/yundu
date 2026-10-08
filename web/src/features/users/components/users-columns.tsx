@@ -171,6 +171,32 @@ export function useUsersColumns(): ColumnDef<User>[] {
       meta: { mobileOrder: 40 },
     },
     {
+      accessorKey: 'total_tokens',
+      header: t('Total Tokens'),
+      cell: ({ row }) => (
+        <span className='text-sm tabular-nums'>
+          {row.original.total_tokens === undefined
+            ? '—'
+            : row.original.total_tokens.toLocaleString()}
+        </span>
+      ),
+      enableSorting: false,
+      size: 150,
+      meta: { mobileOrder: 50 },
+    },
+    {
+      accessorKey: 'request_count',
+      header: t('Requests'),
+      cell: ({ row }) => (
+        <span className='text-sm tabular-nums'>
+          {row.original.request_count.toLocaleString()}
+        </span>
+      ),
+      enableSorting: false,
+      size: 120,
+      meta: { mobileOrder: 60 },
+    },
+    {
       accessorKey: 'group',
       header: t('User Group'),
       cell: ({ row }) => {

@@ -27,6 +27,7 @@ export const userSchema = z.object({
   quota: z.number(),
   used_quota: z.number(),
   request_count: z.number(),
+  total_tokens: z.number().optional(),
   group: z.string(),
   aff_code: z.string().optional(),
   aff_count: z.number().optional(),

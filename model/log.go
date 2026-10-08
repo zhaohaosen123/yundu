@@ -694,6 +694,34 @@ func SumUsedToken(logType int, startTimestamp int64, endTimestamp int64, modelNa
 	return token
 }
 
+func PopulateUserTokenTotals(users []*User) error {
+	if len(users) == 0 {
+		return nil
+	}
+	ids := make([]int, 0, len(users))
+	for _, user := range users {
+		ids = append(ids, user.Id)
+	}
+	var totals []struct {
+		UserID      int   `gorm:"column:user_id"`
+		TotalTokens int64 `gorm:"column:total_tokens"`
+	}
+	if err := LOG_DB.Table("logs").
+		Select("user_id, COALESCE(SUM(prompt_tokens + completion_tokens), 0) AS total_tokens").
+		Where("type = ? AND user_id IN ?", LogTypeConsume, ids).
+		Group("user_id").Scan(&totals).Error; err != nil {
+		return err
+	}
+	byUser := make(map[int]int64, len(totals))
+	for _, total := range totals {
+		byUser[total.UserID] = total.TotalTokens
+	}
+	for _, user := range users {
+		user.TotalTokens = byUser[user.Id]
+	}
+	return nil
+}
+
 func CountOldLog(ctx context.Context, targetTimestamp int64) (int64, error) {
 	var total int64
 	if err := LOG_DB.WithContext(ctx).Model(&Log{}).Where("created_at < ?", targetTimestamp).Count(&total).Error; err != nil {

@@ -397,6 +397,10 @@ func GetUser(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgUserNoPermissionSameLevel)
 		return
 	}
+	if err := model.PopulateUserTokenTotals([]*model.User{user}); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	user.AdminPermissions = authz.Capabilities(user.Id, user.Role)
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

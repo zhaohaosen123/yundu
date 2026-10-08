@@ -64,3 +64,27 @@ func TestSearchUsersSortsBeforePagination(t *testing.T) {
 	assert.Equal(t, int64(42), total)
 	assert.Equal(t, []int{21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40}, collectUserIDs(users))
 }
+
+func TestUserListsIncludeOnlyConsumedTokensForCurrentPage(t *testing.T) {
+	truncateTables(t)
+	insertUsersForPaginationTest(t, 3)
+	for _, log := range []*Log{
+		{UserId: 1, Type: LogTypeConsume, PromptTokens: 100, CompletionTokens: 25},
+		{UserId: 1, Type: LogTypeConsume, PromptTokens: 50, CompletionTokens: 10},
+		{UserId: 1, Type: LogTypeError, PromptTokens: 900},
+		{UserId: 2, Type: LogTypeConsume, PromptTokens: 7, CompletionTokens: 3},
+	} {
+		require.NoError(t, DB.Create(log).Error)
+	}
+
+	page, total, err := GetAllUsers(&common.PageInfo{Page: 1, PageSize: 2}, NewUserSortOptions("id", "asc"))
+	require.NoError(t, err)
+	assert.Equal(t, int64(3), total)
+	assert.Equal(t, int64(185), page[0].TotalTokens)
+	assert.Equal(t, int64(10), page[1].TotalTokens)
+
+	filtered, total, err := SearchUsers("user03", "", nil, nil, 0, 10)
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Zero(t, filtered[0].TotalTokens)
+}
