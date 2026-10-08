@@ -11,6 +11,7 @@ import { NavigationProgress } from '@/components/navigation-progress'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeCustomizationProvider } from '@/context/theme-customization-provider'
 import { saveAffiliateCode } from '@/features/auth/lib/storage'
+import { ContactSupportDialog } from '@/features/contact/components/contact-support-dialog'
 import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
 import { getSetupStatus } from '@/features/setup/api'
@@ -76,6 +77,7 @@ function RootComponent() {
     <ThemeCustomizationProvider>
       <NavigationProgress />
       <Outlet />
+      <ContactSupportDialog />
       <Toaster closeButton duration={5000} position='top-center' richColors />
     </ThemeCustomizationProvider>
   )

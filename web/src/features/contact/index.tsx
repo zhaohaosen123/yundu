@@ -30,6 +30,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
+import { SupportContacts } from './components/support-contacts'
+
 type ContactQrCardProps = {
   alt: string
   description: string
@@ -120,9 +122,13 @@ export function Contact() {
           </h1>
           <p className='text-muted-foreground mt-4 text-sm leading-6 sm:text-base'>
             {t(
-              'For account inquiries, technical support, or service questions, choose a QQ contact method below.'
+              'Questions about your account, payments, or API requests? Reach us through any of these channels.'
             )}
           </p>
+        </div>
+
+        <div className='mx-auto mb-10 max-w-2xl border-y px-2 sm:px-4'>
+          <SupportContacts />
         </div>
 
         <div className='grid gap-6 md:grid-cols-2'>
