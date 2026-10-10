@@ -1,0 +1,347 @@
+/*
+Copyright (C) 2023-2026 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+
+/*
+ * The motion shell gives each page family its own visual behavior. The layer
+ * is decorative only; real controls and content stay in the document above it.
+ */
+.yundu-motion-shell {
+  --yundu-motion-opacity: 0.34;
+  position: relative;
+  isolation: isolate;
+}
+
+.yundu-motion-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: var(--yundu-motion-opacity);
+}
+
+.yundu-motion-layer > span {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.yundu-motion-layer__grid {
+  inset: 0;
+  background-image:
+    linear-gradient(
+      color-mix(in oklch, var(--primary) 13%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklch, var(--primary) 13%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 54px 54px;
+  mask-image: linear-gradient(to bottom, black, transparent 68%);
+  opacity: 0.32;
+}
+
+.yundu-motion-layer__orbit {
+  top: 7%;
+  right: -10rem;
+  width: min(44vw, 36rem);
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in oklch, var(--primary) 25%, transparent);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 4rem color-mix(in oklch, var(--primary) 5%, transparent),
+    0 0 0 8rem color-mix(in oklch, var(--primary) 3%, transparent);
+  opacity: 0.52;
+}
+
+.yundu-motion-layer__beam {
+  top: 18%;
+  left: -18%;
+  width: 28%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  opacity: 0;
+}
+
+.yundu-motion-layer__trace {
+  top: 12%;
+  right: 10%;
+  width: 20rem;
+  height: 10rem;
+  border-top: 1px dashed color-mix(in oklch, var(--primary) 30%, transparent);
+  border-right: 1px dashed color-mix(in oklch, var(--chart-2) 24%, transparent);
+  border-radius: 0 3rem 0 0;
+  opacity: 0;
+}
+
+@keyframes yundu-motion-grid-drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 54px 54px;
+  }
+}
+
+@keyframes yundu-motion-orbit {
+  from {
+    transform: rotate(-8deg) scale(0.94);
+  }
+  to {
+    transform: rotate(12deg) scale(1.04);
+  }
+}
+
+@keyframes yundu-motion-beam {
+  0% {
+    left: -20%;
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.9;
+  }
+  82% {
+    opacity: 0.65;
+  }
+  100% {
+    left: 110%;
+    opacity: 0;
+  }
+}
+
+@keyframes yundu-motion-trace {
+  from {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.9;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 0.55;
+  }
+}
+
+@keyframes yundu-motion-scan {
+  from {
+    transform: translateY(-120%);
+  }
+  to {
+    transform: translateY(120vh);
+  }
+}
+
+@keyframes yundu-motion-pulse {
+  0%,
+  100% {
+    opacity: 0.22;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+@keyframes yundu-motion-dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (pointer: fine) {
+  [data-yundu-profile='public'] .yundu-motion-layer__grid,
+  [data-yundu-profile='catalog'] .yundu-motion-layer__grid {
+    animation: yundu-motion-grid-drift 18s linear infinite;
+  }
+
+  [data-yundu-profile='public'] .yundu-motion-layer__orbit {
+    animation: yundu-motion-orbit 12s ease-in-out infinite alternate;
+  }
+
+  [data-yundu-profile='public'] .yundu-motion-layer__beam,
+  [data-yundu-profile='catalog'] .yundu-motion-layer__beam {
+    animation: yundu-motion-beam 8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+
+  [data-yundu-profile='docs'] .yundu-motion-layer__trace,
+  [data-yundu-profile='support'] .yundu-motion-layer__trace {
+    animation: yundu-motion-trace 3.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  [data-yundu-profile='operations'] .yundu-motion-layer__grid {
+    background-size: 36px 36px;
+    opacity: 0.24;
+    animation: yundu-motion-grid-drift 11s linear infinite;
+  }
+
+  [data-yundu-profile='operations'] .yundu-motion-layer__beam {
+    top: 32%;
+    width: 36%;
+    animation: yundu-motion-beam 5.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+
+  [data-yundu-profile='operations'] .yundu-motion-layer__orbit {
+    top: 12%;
+    right: -18rem;
+    animation: yundu-motion-orbit 9s ease-in-out infinite alternate;
+  }
+
+  [data-yundu-profile='records'] .yundu-motion-layer__grid {
+    background-size: 100% 4.5rem;
+    opacity: 0.17;
+  }
+
+  [data-yundu-profile='records'] .yundu-motion-layer__beam {
+    top: 0;
+    left: 6%;
+    width: 1px;
+    height: 32%;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      var(--chart-3),
+      transparent
+    );
+    animation: yundu-motion-scan 7s linear infinite;
+  }
+
+  [data-yundu-profile='ledger'] .yundu-motion-layer__grid {
+    background-size: 100% 2.75rem;
+    opacity: 0.16;
+    mask-image: linear-gradient(to bottom, black, transparent 82%);
+  }
+
+  [data-yundu-profile='ledger'] .yundu-motion-layer__beam {
+    top: 22%;
+    width: 48%;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0 12px,
+      var(--chart-4) 12px 16px,
+      transparent 16px 28px
+    );
+    animation: yundu-motion-beam 6s linear infinite;
+  }
+
+  [data-yundu-profile='workbench'] .yundu-motion-layer__grid {
+    background-size: 72px 72px;
+    opacity: 0.14;
+  }
+
+  [data-yundu-profile='workbench'] .yundu-motion-layer__orbit {
+    top: 24%;
+    right: -22rem;
+    opacity: 0.26;
+  }
+
+  [data-yundu-profile='workbench'] .yundu-motion-layer__trace {
+    top: auto;
+    right: 6%;
+    bottom: 10%;
+    width: 15rem;
+    height: 7rem;
+    border-color: color-mix(in oklch, var(--chart-3) 28%, transparent);
+    animation: yundu-motion-trace 4.2s ease-out both;
+  }
+
+  [data-yundu-profile='docs'] .yundu-motion-layer__grid {
+    background-size: 88px 88px;
+    opacity: 0.14;
+  }
+
+  [data-yundu-profile='docs'] .yundu-motion-layer__orbit {
+    top: 18%;
+    right: -24rem;
+    opacity: 0.22;
+  }
+
+  [data-yundu-profile='support'] .yundu-motion-layer__grid {
+    background-size: 68px 68px;
+    opacity: 0.18;
+  }
+
+  [data-yundu-profile='catalog'] [data-yundu-nav-link]:hover,
+  [data-yundu-profile='public'] [data-yundu-nav-link]:hover {
+    text-shadow: 0 0 14px color-mix(in oklch, var(--primary) 50%, transparent);
+    transform: translateY(-2px);
+  }
+
+  [data-yundu-profile='operations'] [data-slot='card']:hover {
+    transform: translateY(-4px) rotateX(0.5deg);
+  }
+
+  [data-yundu-profile='records'] [data-slot='table'] tbody tr:hover {
+    transform: translateX(4px);
+    box-shadow: inset 2px 0 0 var(--chart-3);
+  }
+
+  [data-yundu-profile='ledger'] [data-slot='card']:hover {
+    box-shadow:
+      0 16px 34px -26px color-mix(in oklch, var(--chart-4) 70%, transparent),
+      0 0 0 1px color-mix(in oklch, var(--chart-4) 25%, transparent);
+  }
+
+  [data-yundu-profile='workbench'] textarea:focus,
+  [data-yundu-profile='workbench'] [contenteditable='true']:focus {
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--chart-3) 65%, transparent),
+      0 0 34px -12px var(--chart-3);
+  }
+
+  [data-yundu-profile='docs'] .yundu-doc-step:hover,
+  [data-yundu-profile='support'] [data-slot='card']:hover {
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (pointer: coarse) {
+  .yundu-motion-layer__grid,
+  .yundu-motion-layer__orbit,
+  .yundu-motion-layer__beam,
+  .yundu-motion-layer__trace {
+    animation: none !important;
+  }
+
+  [data-yundu-profile] [data-yundu-nav-link]:hover,
+  [data-yundu-profile] [data-slot='card']:hover,
+  [data-yundu-profile] [data-slot='table'] tbody tr:hover,
+  [data-yundu-profile] .yundu-doc-step:hover {
+    transform: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .yundu-motion-layer__orbit {
+    right: -18rem;
+    width: 26rem;
+  }
+
+  .yundu-motion-layer__trace {
+    right: -5rem;
+    width: 14rem;
+  }
+
+  [data-yundu-profile='operations'] .yundu-motion-layer__beam,
+  [data-yundu-profile='records'] .yundu-motion-layer__beam,
+  [data-yundu-profile='ledger'] .yundu-motion-layer__beam {
+    opacity: 0.55;
+  }
+}

@@ -18,6 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import type { TopNavLink } from '../types'
 import { PublicHeader, type PublicHeaderProps } from './public-header'
+import { YunduAmbientLayer } from './yundu-motion'
+import {
+  useYunduMotionProfile,
+  type YunduMotionProfile,
+} from './yundu-motion-profile'
 
 type PublicLayoutProps = {
   children: React.ReactNode
@@ -30,11 +35,18 @@ type PublicLayoutProps = {
   showNotifications?: boolean
   logo?: React.ReactNode
   siteName?: string
+  motionProfile?: YunduMotionProfile
 }
 
 export function PublicLayout(props: PublicLayoutProps) {
+  const motionProfile = useYunduMotionProfile(props.motionProfile)
+
   return (
-    <div className='yundu-public-page bg-background text-foreground relative min-h-svh overflow-x-clip'>
+    <div
+      className='yundu-motion-shell yundu-public-page bg-background text-foreground relative min-h-svh overflow-x-clip'
+      data-yundu-profile={motionProfile}
+    >
+      <YunduAmbientLayer profile={motionProfile} />
       <PublicHeader
         navContent={props.navContent}
         navLinks={props.navLinks}
@@ -47,11 +59,11 @@ export function PublicLayout(props: PublicLayoutProps) {
       />
 
       {props.showMainContainer !== false ? (
-        <main className='container px-4 py-6 pt-20 md:px-4'>
+        <main className='relative z-10 container px-4 py-6 pt-20 md:px-4'>
           {props.children}
         </main>
       ) : (
-        props.children
+        <div className='relative z-10'>{props.children}</div>
       )}
     </div>
   )

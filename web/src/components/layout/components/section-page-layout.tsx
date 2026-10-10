@@ -24,8 +24,15 @@ import {
   type ReactNode,
 } from 'react'
 
+import { cn } from '@/lib/utils'
+
 import { Main } from './main'
 import { PageFooterProvider } from './page-footer'
+import { YunduAmbientLayer } from './yundu-motion'
+import {
+  useYunduMotionProfile,
+  type YunduMotionProfile,
+} from './yundu-motion-profile'
 
 type SlotProps = { children?: ReactNode }
 
@@ -53,9 +60,11 @@ export type SectionPageLayoutProps = {
   children: ReactNode
   fixedContent?: boolean
   stackActionsOnMobile?: boolean
+  motionProfile?: YunduMotionProfile
 }
 
 export function SectionPageLayout(props: SectionPageLayoutProps) {
+  const motionProfile = useYunduMotionProfile(props.motionProfile)
   const [footerContainer, setFooterContainer] = useState<HTMLDivElement | null>(
     null
   )
@@ -80,8 +89,12 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
 
   return (
     <PageFooterProvider container={footerContainer}>
-      <Main>
-        <div className='yundu-page-heading border-border/60 bg-background/70 shrink-0 border-b px-3 pt-3 pb-2.5 backdrop-blur-sm sm:px-4 sm:pt-4 sm:pb-3'>
+      <Main className='yundu-motion-shell' data-yundu-profile={motionProfile}>
+        <YunduAmbientLayer profile={motionProfile} />
+        <div
+          className='yundu-page-heading border-border/60 bg-background/70 relative z-10 shrink-0 border-b px-3 pt-3 pb-2.5 backdrop-blur-sm sm:px-4 sm:pt-4 sm:pb-3'
+          data-yundu-heading
+        >
           {breadcrumb != null && (
             <div className='mb-2 sm:mb-3'>{breadcrumb}</div>
           )}
@@ -107,18 +120,19 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
         </div>
 
         <div
-          className={
+          className={cn(
+            'relative z-10',
             props.fixedContent
               ? 'min-h-0 flex-1 overflow-hidden px-3 pt-1 pb-3 sm:px-4 sm:pt-1.5 sm:pb-4'
               : 'min-h-0 flex-1 overflow-auto px-3 pt-1 pb-3 sm:px-4 sm:pt-1.5 sm:pb-4'
-          }
+          )}
         >
           {content}
         </div>
 
         <div
           ref={setFooterContainer}
-          className='bg-background shrink-0 border-t px-3 py-2.5 empty:hidden sm:px-4 sm:py-3'
+          className='bg-background relative z-10 shrink-0 border-t px-3 py-2.5 empty:hidden sm:px-4 sm:py-3'
         />
       </Main>
     </PageFooterProvider>

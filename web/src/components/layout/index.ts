@@ -38,6 +38,11 @@ export { SidebarViewHeader } from './components/sidebar-view-header'
 export { SystemBrand } from './components/system-brand'
 export { TopNav } from './components/top-nav'
 export { MobileDrawer } from './components/mobile-drawer'
+export { YunduAmbientLayer } from './components/yundu-motion'
+export {
+  getYunduMotionProfile,
+  useYunduMotionProfile,
+} from './components/yundu-motion-profile'
 
 // Configuration
 export { SYSTEM_SETTINGS_VIEW } from './config/system-settings.config'
@@ -65,3 +70,4 @@ export type {
   TopNavLink,
 } from './types'
 export type { SectionPageLayoutProps } from './components/section-page-layout'
+export type { YunduMotionProfile } from './components/yundu-motion-profile'

@@ -27,6 +27,8 @@ import { cn } from '@/lib/utils'
 
 import { AppHeader } from './app-header'
 import { AppSidebar } from './app-sidebar'
+import { YunduAmbientLayer } from './yundu-motion'
+import { useYunduMotionProfile } from './yundu-motion-profile'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -34,6 +36,8 @@ type AuthenticatedLayoutProps = {
 
 export function AuthenticatedLayout(props: AuthenticatedLayoutProps) {
   const defaultOpen = getCookie('sidebar_state') !== 'false'
+  const motionProfile = useYunduMotionProfile()
+  const isWorkbench = motionProfile === 'workbench'
 
   return (
     <LayoutProvider>
@@ -48,10 +52,21 @@ export function AuthenticatedLayout(props: AuthenticatedLayoutProps) {
                 '@container/content',
                 'h-[calc(100svh-var(--app-header-height,0px))]',
                 'min-h-0 overflow-hidden',
-                'peer-data-[variant=inset]:h-[calc(100svh-var(--app-header-height,0px)-(var(--spacing)*4))]'
+                'peer-data-[variant=inset]:h-[calc(100svh-var(--app-header-height,0px)-(var(--spacing)*4))]',
+                isWorkbench && 'yundu-motion-shell'
               )}
+              data-yundu-profile={isWorkbench ? motionProfile : undefined}
             >
-              {props.children ?? <AnimatedOutlet />}
+              {isWorkbench ? (
+                <>
+                  <YunduAmbientLayer profile={motionProfile} />
+                  <div className='relative z-10 flex h-full min-h-0 flex-col'>
+                    {props.children ?? <AnimatedOutlet />}
+                  </div>
+                </>
+              ) : (
+                (props.children ?? <AnimatedOutlet />)
+              )}
             </SidebarInset>
           </div>
           <CommandMenu />
